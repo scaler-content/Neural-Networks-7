@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural Network 7 post read</title>
+<meta name="description" content="Autoencoders: bottlenecks, embeddings, transfer learning, the identity trap, denoising, recommendations and anomaly detection.">
+<style>
+:root{
+  --navy-950:#060F30;
+  --navy-900:#0A1A4A;
+  --navy-800:#11287A;
+  --royal-700:#1636A6;
+  --royal-600:#1F46C8;
+  --royal-500:#2F5BE0;
+  --royal-300:#9DB4F5;
+  --royal-200:#C5D3FA;
+  --royal-100:#E3EAFB;
+  --royal-50:#F3F6FD;
+  --gold-500:#FFC21A;
+  --gold-600:#E6A800;
+  --gold-700:#8A6400;
+  --gold-200:#FFE5A0;
+  --gold-100:#FFF4CC;
+  --ink:#0F1B3D;
+  --muted:#46527A;
+  --line:#D6DEF3;
+  --paper:#FFFFFF;
+  --bg:#F6F8FE;
+  --radius:16px;
+  --shadow:0 1px 2px rgba(10,26,74,.06),0 8px 24px rgba(10,26,74,.07);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --ax:#46527A; --grid:#DCE4F7; --txt:#46527A;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--royal-600);text-underline-offset:3px}
+a:hover{color:var(--royal-700)}
+:focus-visible{outline:3px solid var(--royal-600);outline-offset:3px;border-radius:4px}
+.dark :focus-visible,.hero :focus-visible,footer :focus-visible{outline-color:var(--gold-500)}
+.skip{position:absolute;left:-999px;top:8px;background:var(--gold-500);color:var(--navy-900);padding:8px 14px;border-radius:8px;z-index:100;font-weight:700}
+.skip:focus{left:8px}
+code{font-family:var(--mono);font-size:.88em;background:var(--royal-100);color:var(--navy-900);padding:.1em .38em;border-radius:5px}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(6,15,48,.96);backdrop-filter:blur(8px);color:#fff;border-bottom:1px solid rgba(255,194,26,.35)}
+.topbar-in{max-width:1120px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:18px;height:56px}
+.brand{font-family:var(--serif);font-weight:700;font-size:1rem;color:#fff;white-space:nowrap;display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand i{width:10px;height:10px;background:var(--gold-500);border-radius:50%;display:inline-block}
+.nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.nav::-webkit-scrollbar{display:none}
+.nav a{color:#C9D5F8;text-decoration:none;font-size:.84rem;font-weight:600;padding:8px 11px;border-radius:999px;white-space:nowrap}
+.nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav a.on{background:var(--gold-500);color:var(--navy-900)}
+.progress{position:absolute;left:0;bottom:-1px;height:3px;width:0;background:var(--gold-500)}
+@media (max-width:640px){.brand span{display:none}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 85% -10%,#1F46C8 0%,rgba(31,70,200,0) 60%),linear-gradient(160deg,var(--navy-950),var(--navy-900) 55%,var(--navy-800));color:#fff;padding:84px 0 92px}
+.hero svg.deco{position:absolute;right:-40px;top:0;height:100%;width:min(640px,70%);opacity:.5;pointer-events:none}
+.hero .wrap{position:relative}
+.eyebrow{display:inline-block;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--navy-900);background:var(--gold-500);padding:5px 12px;border-radius:999px}
+.hero h1{font-family:var(--serif);font-size:clamp(2.3rem,6vw,4.2rem);line-height:1.08;margin:22px 0 14px;letter-spacing:-.01em;max-width:14ch}
+.hero p.sub{font-size:clamp(1.05rem,2.2vw,1.3rem);color:#D6E0FF;max-width:44ch;margin:0 0 28px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid rgba(255,194,26,.6);color:var(--gold-200);padding:5px 12px;border-radius:999px;font-size:.84rem;font-weight:600}
+
+/* layout */
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.prose{max-width:740px}
+main{padding-bottom:40px}
+section.sec{padding:72px 0 8px}
+.sec-h{display:flex;align-items:flex-end;gap:16px;margin-bottom:24px;border-bottom:2px solid var(--line);padding-bottom:16px}
+.num{font-family:var(--serif);font-size:3rem;line-height:1;font-weight:700;color:var(--gold-500);background:var(--navy-900);padding:10px 14px 6px;border-radius:12px;min-width:76px;text-align:center}
+.sec-h h2{font-family:var(--serif);font-size:clamp(1.7rem,3.6vw,2.4rem);line-height:1.15;margin:0;color:var(--navy-900)}
+.sec-h p{margin:4px 0 0;color:var(--muted);font-size:.98rem;line-height:1.5}
+h3{font-family:var(--serif);font-size:1.5rem;line-height:1.25;margin:44px 0 10px;color:var(--navy-900)}
+h3 .tag{font-family:var(--sans);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-500);color:var(--navy-900);padding:3px 9px;border-radius:999px;margin-right:10px;vertical-align:middle;font-weight:800}
+h4{margin:0 0 6px;font-size:1.02rem;color:var(--navy-900)}
+p{margin:0 0 16px}
+.lead{font-size:1.18rem;color:#243263}
+.hl{background:linear-gradient(transparent 58%,var(--gold-200) 58%);padding:0 2px}
+
+/* cards & figures */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.fig{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin:26px 0;overflow:hidden}
+.fig-h{padding:16px 22px 0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.fig-h h4{font-size:1.05rem;margin:0}
+.fig-h span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--navy-900);background:var(--gold-500);padding:2px 9px;border-radius:999px}
+.fig-b{padding:14px 22px 20px}
+.fig-c{padding:12px 22px 18px;font-size:.88rem;color:var(--muted);border-top:1px solid var(--line);background:var(--royal-50);line-height:1.55}
+.fig.dark{background:var(--navy-900);border-color:var(--navy-800);color:#fff;--ax:#B9C6EE;--grid:rgba(255,255,255,.13);--txt:#D6DFFA}
+.fig.dark .fig-h h4{color:#fff}
+.fig.dark .fig-c{background:var(--navy-950);color:#C3D0F5;border-color:rgba(255,255,255,.1)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.grid2>*,.grid3>*,.grid4>*{min-width:0}
+@media (max-width:860px){.grid2,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.grid4{grid-template-columns:1fr}}
+
+.stat{background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--royal-600);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-family:var(--serif);font-size:1.9rem;line-height:1.1;color:var(--navy-900)}
+.stat span{font-size:.86rem;color:var(--muted);line-height:1.4;display:block;margin-top:4px}
+.stat.gold{border-top-color:var(--gold-500)}
+
+.callout{border-radius:14px;padding:16px 20px;margin:22px 0;border:1px solid var(--royal-200);background:var(--royal-50);border-left:6px solid var(--royal-600)}
+.callout.gold{background:var(--gold-100);border-color:var(--gold-200);border-left-color:var(--gold-500)}
+.callout .lab{display:inline-block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--royal-700);margin-bottom:4px}
+.callout.gold .lab{color:var(--gold-700)}
+.callout p:last-child{margin-bottom:0}
+.try{background:var(--navy-900);color:#EAF0FF;border-radius:14px;padding:18px 22px;margin:22px 0;border-left:6px solid var(--gold-500)}
+.try .lab{display:inline-block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--gold-500);margin-bottom:4px}
+.try p:last-child{margin-bottom:0}
+.try code{background:rgba(255,255,255,.12);color:var(--gold-200)}
+
+details{background:var(--paper);border:1px solid var(--line);border-radius:12px;margin:14px 0;overflow:hidden}
+details>summary{cursor:pointer;padding:13px 18px;font-weight:700;color:var(--navy-900);list-style:none;display:flex;align-items:center;gap:10px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"+";display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--navy-900);color:var(--gold-500);font-weight:800;flex:none;line-height:1}
+details[open]>summary::before{content:"\2212"}
+details>summary:hover{background:var(--royal-50)}
+details .dbody{padding:4px 18px 16px}
+details.code{background:var(--navy-950);border-color:var(--navy-800)}
+details.code>summary{color:#E6EDFF}
+details.code>summary:hover{background:var(--navy-900)}
+details.code .dbody{padding:0 0 4px}
+pre{margin:0;overflow-x:auto;padding:14px 18px;font-family:var(--mono);font-size:.82rem;line-height:1.6;color:#E6EDFF;tab-size:4}
+pre.out{background:rgba(255,194,26,.08);border-top:1px dashed rgba(255,194,26,.5);color:var(--gold-200)}
+pre .k{color:#FFC21A}pre .s{color:#9DE3B2}pre .c{color:#8FA3D8;font-style:italic}pre .n{color:#8FB0FF}
+.outlab{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--gold-500);padding:8px 18px 0;background:rgba(255,194,26,.08)}
+
+/* controls */
+.btn{font:inherit;font-weight:700;font-size:.9rem;border:2px solid var(--royal-600);background:var(--royal-600);color:#fff;border-radius:999px;padding:7px 16px;cursor:pointer;line-height:1.3}
+.btn:hover{background:var(--royal-700);border-color:var(--royal-700)}
+.btn.ghost{background:transparent;color:var(--royal-700)}
+.btn.ghost:hover{background:var(--royal-100)}
+.btn[aria-pressed="true"],.btn.on{background:var(--gold-500);border-color:var(--gold-500);color:var(--navy-900)}
+.btn.sm{padding:4px 12px;font-size:.84rem}
+.dark .btn.ghost{color:#fff;border-color:rgba(255,255,255,.5)}
+.dark .btn.ghost:hover{background:rgba(255,255,255,.1)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0}
+.seg{display:inline-flex;gap:6px;flex-wrap:wrap}
+label.rng{display:grid;gap:4px;font-size:.9rem;font-weight:600;min-width:220px;flex:1}
+label.rng output{font-family:var(--mono);color:var(--royal-700);font-weight:700}
+.dark label.rng output{color:var(--gold-500)}
+input[type=range]{width:100%;accent-color:var(--royal-600);height:28px}
+.dark input[type=range]{accent-color:var(--gold-500)}
+input[type=checkbox]{accent-color:var(--gold-500);width:18px;height:18px}
+
+/* charts */
+.chart{width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--sans);font-size:12px;fill:var(--txt)}
+.chart .grid{stroke:var(--grid);stroke-width:1}
+.chart .axis{stroke:var(--ax);stroke-width:1.2}
+.chart .vl{font-weight:700;font-size:12.5px;fill:var(--ink)}
+.dark .chart .vl{fill:#fff}
+.legend{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.84rem}
+.legend li{display:flex;align-items:center;gap:7px;white-space:nowrap}
+canvas{display:block;width:100%;border-radius:10px}
+
+/* heatmap */
+.hm{display:grid;grid-template-columns:44px repeat(7,1fr);gap:3px;font-family:var(--mono);font-size:.74rem;max-width:560px}
+.hm div{padding:6px 0;text-align:center;border-radius:6px;min-height:30px}
+.hm .h{font-weight:700;color:var(--muted);background:none;font-family:var(--sans)}
+.hm .rl{color:var(--muted);font-family:var(--sans);font-weight:600;background:none;text-align:right;padding-right:6px}
+.read{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.read .stat{flex:1;min-width:150px}
+
+/* loop */
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;list-style:none;padding:0;margin:0 0 14px;counter-reset:l}
+.loop li button{width:100%;height:100%;text-align:left;font:inherit;border:2px solid var(--line);background:var(--paper);border-radius:12px;padding:12px;cursor:pointer;color:var(--ink);position:relative}
+.loop li button b{display:block;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--royal-700)}
+.loop li button span{font-size:.93rem;line-height:1.4;display:block;margin-top:4px;font-weight:600}
+.loop li button[aria-current="step"]{background:var(--gold-500);border-color:var(--navy-900)}
+.loop li button[aria-current="step"] b{color:var(--navy-900)}
+.loopback{font-size:.88rem;font-weight:700;color:var(--royal-700);margin:0 0 10px}
+@media (max-width:760px){.loop{grid-template-columns:1fr 1fr}}
+
+/* family diagram */
+.family{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.fnode{flex:1;min-width:170px;background:var(--royal-50);border:2px solid var(--royal-600);border-radius:14px;padding:14px 16px;font-weight:800;color:var(--navy-900)}
+.fnode small{display:block;font-weight:500;color:var(--muted);font-size:.86rem;line-height:1.4;margin-top:3px}
+.fnode.gold{background:var(--gold-500);border-color:var(--navy-900)}
+.fnode.gold small{color:var(--navy-900)}
+.fnode.navy{background:var(--navy-900);color:#fff;border-color:var(--navy-900)}
+.fnode.navy small{color:#C3D0F5}
+.fbranch{display:grid;gap:10px;flex:1.4;min-width:200px}
+.farrow{align-self:center;font-weight:800;color:var(--royal-700);font-size:1.4rem}
+@media (max-width:760px){.farrow{display:none}.family{flex-direction:column}}
+
+/* quiz */
+.quiz{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin:28px 0}
+.quiz .qh{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy-900);background:var(--gold-500);display:inline-block;padding:2px 10px;border-radius:999px}
+.quiz .qt{font-family:var(--serif);font-size:1.22rem;line-height:1.4;margin:10px 0 14px;color:var(--navy-900);font-weight:700}
+.quiz ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.quiz li button{font:inherit;text-align:left;width:100%;background:var(--royal-50);border:2px solid var(--royal-200);border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--ink);display:flex;gap:12px;line-height:1.5}
+.quiz li button:hover:not(:disabled){border-color:var(--royal-600);background:var(--royal-100)}
+.quiz li button .ml{flex:none;width:26px;height:26px;border-radius:50%;background:var(--navy-900);color:#fff;font-weight:800;font-size:.8rem;display:grid;place-items:center}
+.quiz li button:disabled{cursor:default}
+.quiz li button.ok{background:var(--gold-100);border-color:var(--gold-600)}
+.quiz li button.ok .ml{background:var(--gold-500);color:var(--navy-900)}
+.quiz li button.bad{background:#fff;border-color:var(--navy-900);border-style:dashed}
+.quiz .fb{margin-top:16px;padding:14px 16px;border-radius:12px;background:var(--royal-50);border-left:6px solid var(--royal-600)}
+.quiz .fb.good{background:var(--gold-100);border-left-color:var(--gold-500)}
+.quiz .fb strong{color:var(--navy-900)}
+.quiz .fb p:last-child{margin:0}
+
+/* flip cards */
+.rf{display:grid;gap:12px}
+.rf button.q{font:inherit;font-weight:700;width:100%;text-align:left;border:2px solid var(--navy-900);background:var(--navy-900);color:#fff;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.rf button.q::after{content:"Reveal";font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-500);color:var(--navy-900);padding:3px 10px;border-radius:999px;flex:none}
+.rf button.q[aria-expanded="true"]::after{content:"Hide"}
+.rf .a{background:var(--gold-100);border:2px solid var(--gold-500);border-top:none;border-radius:0 0 12px 12px;padding:14px 16px;margin-top:-4px}
+.rf .a p:last-child{margin:0}
+
+/* table */
+.tablewrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow);background:var(--paper)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.93rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+thead th{background:var(--navy-900);color:#fff;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
+tbody th{color:var(--navy-900);font-weight:800;background:var(--royal-50)}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:none}
+.sw{display:inline-block;width:18px;height:10px;vertical-align:middle;margin-right:6px}
+
+.split{height:34px;display:flex;border-radius:10px;overflow:hidden;border:2px solid var(--navy-900);font-weight:800;font-size:.84rem}
+.split div{display:grid;place-items:center;white-space:nowrap;overflow:hidden}
+.pill-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.pill-list li{background:var(--royal-100);border:1px solid var(--royal-200);color:var(--navy-900);padding:4px 12px;border-radius:999px;font-size:.88rem;font-weight:600;font-family:var(--mono)}
+.arch{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+.arch .b{background:var(--royal-600);color:#fff;border-radius:10px;padding:8px 12px;font-weight:700;font-size:.88rem;text-align:center;line-height:1.25}
+.arch .b small{display:block;font-weight:500;color:var(--royal-200);font-size:.74rem}
+.arch .b.g{background:var(--gold-500);color:var(--navy-900)}
+.arch .b.g small{color:var(--navy-900)}
+.arch .ar{font-weight:800;color:var(--royal-700)}
+ol.take{counter-reset:t;list-style:none;padding:0;margin:0;display:grid;gap:12px}
+ol.take li{counter-increment:t;background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--gold-500);border-radius:12px;padding:14px 16px 14px 62px;position:relative;box-shadow:var(--shadow)}
+ol.take li::before{content:counter(t);position:absolute;left:14px;top:12px;width:34px;height:34px;border-radius:50%;background:var(--navy-900);color:var(--gold-500);display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:1.1rem}
+
+footer{margin-top:80px;background:var(--navy-950);color:#C3D0F5;padding:44px 0;border-top:4px solid var(--gold-500)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+footer strong{font-family:var(--serif);font-size:1.3rem;color:#fff}
+footer a{color:var(--gold-500)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:560px){body{font-size:16px}.num{font-size:2.2rem;min-width:60px}.fig-h,.fig-b,.fig-c{padding-left:16px;padding-right:16px}.sec-h{align-items:flex-start}}
+
+.math{font-family:var(--serif);font-size:1.35rem;text-align:center;background:var(--royal-50);border:1px solid var(--royal-200);border-radius:12px;padding:14px 10px;color:var(--navy-900)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.9em;line-height:1.1;margin:0 4px}
+.frac span:first-child{border-bottom:1.5px solid var(--navy-900);padding:0 4px 2px}
+.frac span:last-child{padding-top:2px}
+.frz{display:grid;grid-template-columns:3fr 1fr;gap:12px;margin-top:6px}
+.frz .blk{border:3px solid var(--navy-900);border-radius:14px;padding:14px 16px;font-weight:700;background:var(--royal-100);color:var(--navy-900)}
+.frz .blk small{display:block;font-weight:500;color:var(--muted);margin-top:3px}
+.frz .blk.fz{background:repeating-linear-gradient(135deg,var(--royal-100),var(--royal-100) 10px,#fff 10px,#fff 20px);border-style:dashed}
+.frz .blk.tr{background:var(--gold-500)}
+.frz .blk.tr small{color:var(--navy-900)}
+@media (max-width:560px){.frz{grid-template-columns:1fr}}
+.pair{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-top:10px}
+.pair .pb{flex:1;min-width:150px;border:2px solid var(--navy-900);border-radius:14px;padding:12px 14px;background:var(--royal-50)}
+.pair .pb b{display:block;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--royal-700)}
+.pair .pb span{font-weight:700;display:block;margin-top:4px;color:var(--navy-900)}
+.pair .pb.g{background:var(--gold-100);border-color:var(--gold-600)}
+.pair .pb.g b{color:var(--gold-700)}
+.pair .ar{align-self:center;font-weight:800;font-size:1.3rem;color:var(--royal-700)}
+.mgrid{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;max-width:620px;margin:10px 0}
+.mgrid div{aspect-ratio:1;border-radius:4px;display:grid;place-items:center;font-size:.7rem;font-weight:800;font-family:var(--mono);min-height:18px}
+.mgrid .e{background:var(--royal-100);border:1px solid var(--royal-200);color:var(--royal-300)}
+.mgrid .r{background:var(--gold-500);border:1px solid var(--navy-900);color:var(--navy-900)}
+.mgrid .ig{background:#fff;border:2px dashed var(--navy-900);color:transparent}
+.nb{display:grid;gap:6px;margin:12px 0}
+.nb .it{display:grid;grid-template-columns:minmax(120px,1.4fr) 2fr 54px;gap:10px;align-items:center;font-size:.9rem}
+.nb .it .t{font-weight:600;line-height:1.3}
+.nb .it .t small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.nb .bar{background:var(--royal-100);border-radius:6px;height:16px;overflow:hidden;border:1px solid var(--royal-200)}
+.nb .bar i{display:block;height:100%;background:var(--royal-600);border-right:2px solid var(--navy-900)}
+.nb .sc{font-family:var(--mono);font-weight:700;text-align:right}
+@media (max-width:560px){.nb .it{grid-template-columns:1fr 54px}.nb .it .bar{grid-column:1/-1;order:3}}
+.anom{position:relative;height:96px;margin:10px 8px 0}
+.anom .track{position:absolute;left:0;right:0;top:44px;height:12px;border-radius:8px;background:linear-gradient(90deg,var(--royal-600),var(--royal-200) 60%,var(--gold-500));border:2px solid var(--navy-900)}
+.anom .mk{position:absolute;top:0;transform:translateX(-50%);text-align:center;font-size:.78rem;font-weight:700;line-height:1.25;color:var(--navy-900);white-space:nowrap}
+.anom .mk::after{content:"";display:block;width:3px;height:34px;background:var(--navy-900);margin:2px auto 0}
+.anom .mk.lo{top:56px}
+.anom .mk.lo::after{display:none}
+.anom .tick{position:absolute;top:56px;width:3px;height:14px;background:var(--navy-900);transform:translateX(-50%)}
+.anom .ax{position:absolute;top:74px;font-size:.74rem;color:var(--muted);transform:translateX(-50%)}
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pipe button{font:inherit;font-weight:800;border:2px solid var(--navy-900);background:var(--royal-50);color:var(--navy-900);border-radius:12px;padding:10px 14px;cursor:pointer}
+.pipe button[aria-pressed="true"]{background:var(--gold-500)}
+.pipe .ar{font-weight:800;color:var(--royal-700)}
+@media (max-width:640px){.pipe .ar{display:none}.pipe button{flex:1 1 40%}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="#top"><i></i><span>Neural Network 7 post read</span></a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#start">Start</a>
+      <a href="#intuition">Copy vs compress</a>
+      <a href="#families">Under/overcomplete</a>
+      <a href="#build">Build</a>
+      <a href="#size">Code size</a>
+      <a href="#twod">Two numbers</a>
+      <a href="#features">Features</a>
+      <a href="#trap">Identity trap</a>
+      <a href="#debug">Debugging</a>
+      <a href="#recs">Recommendations</a>
+      <a href="#anomaly">Anomalies &amp; 2026</a>
+      <a href="#recap">Recap</a>
+    </nav>
+  </div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+</header>
+
+<div class="hero" id="top">
+  <svg class="deco" viewBox="0 0 640 480" aria-hidden="true" focusable="false">
+    <g stroke="#FFC21A" stroke-opacity=".35" stroke-width="1.2" fill="none">
+      <path d="M70 60L230 130M70 60L230 250M70 150L230 130M70 150L230 250M70 240L230 130M70 240L230 250M70 330L230 250M70 330L230 350M70 420L230 250M70 420L230 350"/>
+      <path d="M230 130L330 240M230 250L330 240M230 350L330 240"/>
+      <path d="M330 240L430 130M330 240L430 250M330 240L430 350M430 130L590 60M430 130L590 150M430 250L590 150M430 250L590 240M430 250L590 330M430 350L590 330M430 350L590 420M430 130L590 240M430 350L590 240"/>
+    </g>
+    <g fill="#0A1A4A" stroke="#FFC21A" stroke-width="2">
+      <circle cx="70" cy="60" r="10"/><circle cx="70" cy="150" r="10"/><circle cx="70" cy="240" r="10"/><circle cx="70" cy="330" r="10"/><circle cx="70" cy="420" r="10"/>
+      <circle cx="230" cy="130" r="10"/><circle cx="230" cy="250" r="10"/><circle cx="230" cy="350" r="10"/>
+      <circle cx="430" cy="130" r="10"/><circle cx="430" cy="250" r="10"/><circle cx="430" cy="350" r="10"/>
+      <circle cx="590" cy="60" r="10"/><circle cx="590" cy="150" r="10"/><circle cx="590" cy="240" r="10"/><circle cx="590" cy="330" r="10"/><circle cx="590" cy="420" r="10"/>
+    </g>
+    <circle cx="330" cy="240" r="14" fill="#FFC21A" stroke="#fff" stroke-width="2"/>
+  </svg>
+  <div class="wrap">
+    <span class="eyebrow">Interactive learning read</span>
+    <h1>Neural Network 7 post read</h1>
+    <p class="sub">Autoencoders: what a network learns when nobody gives it the answer.</p>
+    <ul class="chips" style="list-style:none;padding:0;margin:0">
+      <li class="chip">Bottleneck</li><li class="chip">Embeddings</li><li class="chip">Transfer learning</li><li class="chip">Denoising</li><li class="chip">Recommendations</li><li class="chip">Anomaly detection</li>
+    </ul>
+  </div>
+</div>
+
+<main id="main" class="wrap">
+
+<!-- ============ START ============ -->
+<section class="sec" id="start" aria-labelledby="h-start">
+  <header class="sec-h"><span class="num">00</span><div><h2 id="h-start">What can a network learn without labels?</h2><p>The closing question of the Neural Networks module.</p></div></header>
+  <div class="prose">
+    <p class="lead">Every model trained so far looked at an input and was told the right answer: this image is a cat, this house costs this much. Every one of those models depended on labels, and <span class="hl">labels are expensive</span>. Someone has to tag every image, every transaction, every review.</p>
+    <p>This read asks a different question: <strong>what can a network learn when nobody gives it the answer?</strong> By the end you will have trained a network that is never told what a digit is, and yet places the same digits close together. You will also see where the idea breaks, how to catch it when it does, and where it quietly runs inside AI systems in 2026.</p>
+  </div>
+
+  <div class="grid2" style="margin-top:24px">
+    <div class="card">
+      <h4>The road ahead</h4>
+      <ol style="margin:8px 0 0;padding-left:20px">
+        <li>Why a same-width network just copies, and how a bottleneck changes that.</li>
+        <li>Undercomplete vs overcomplete autoencoders, and how they relate to PCA.</li>
+        <li>Building, training and sizing an autoencoder in PyTorch.</li>
+        <li>Using the code: visualization, features, transfer learning.</li>
+        <li>The identity trap, denoising autoencoders, and debugging with an AI assistant.</li>
+        <li>Recommendations from sparse data, anomaly detection, and the 2026 landscape.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>The dataset: MNIST</h4>
+      <div class="grid2" style="gap:10px;margin-top:10px">
+        <div class="stat"><b>60,000</b><span>training images</span></div>
+        <div class="stat"><b>10,000</b><span>test images</span></div>
+        <div class="stat gold"><b>784</b><span>values per image (28&times;28, flattened)</span></div>
+        <div class="stat"><b>[0, 1]</b><span>pixel range after dividing by 255</span></div>
+      </div>
+      <p style="margin:12px 0 0;font-size:.92rem;color:var(--muted)">Labels stay out of training. They are used only for coloring plots and for the later classifier check.</p>
+    </div>
+  </div>
+
+  <details class="code"><summary>Code: setup, download and prepare MNIST</summary><div class="dbody">
+<pre><code data-lang="py">import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+from torchvision import datasets
+
+torch.manual_seed(42)
+np.random.seed(42)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print("Using device:", device)
+
+train_ds = datasets.MNIST(root="./data", train=True, download=True)
+test_ds = datasets.MNIST(root="./data", train=False, download=True)
+
+# Flatten each 28x28 image into a 784-long vector with values in [0, 1]
+x_train = (train_ds.data.float() / 255).reshape(-1, 784).to(device)
+x_test = (test_ds.data.float() / 255).reshape(-1, 784).to(device)
+y_train, y_test = train_ds.targets, test_ds.targets     # labels stay on CPU; used only for coloring and later checks
+
+print(x_train.shape, x_test.shape)</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>Using device: cpu
+torch.Size([60000, 784]) torch.Size([10000, 784])</code></pre>
+  </div></details>
+</section>
+
+<!-- ============ INTUITION ============ -->
+<section class="sec" id="intuition" aria-labelledby="h-int">
+  <header class="sec-h"><span class="num">01</span><div><h2 id="h-int">Can a network copy its input?</h2><p>From copying to compressing.</p></div></header>
+  <div class="prose">
+    <p>Take a network where every layer has the same number of neurons: six in, six, six, and six out. The input is <i>x</i><sub>i</sub> and the output is <i>x&#770;</i><sub>i</sub>. We want the output to equal the input. Is that possible?</p>
+    <p>Yes, and it is almost embarrassingly easy. Make every activation linear, set the weights to an identity matrix, and whatever goes in comes out. Gradient descent can even find this on its own. But notice what the network learned by doing this: <strong>nothing</strong>. It copied, and a network that copies gives no insight about the data.</p>
+    <p>So make the task harder in one specific way: squeeze the middle. Explore the three layouts below.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-h"><h4>Same width vs. squeezed in the middle</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Network layout"><div class="seg" id="netBtns"></div></div>
+      <div class="chart" id="netChart"></div>
+      <div class="read">
+        <div class="stat"><b id="netW">6 vs 6</b><span>middle layer width vs input width</span></div>
+        <div class="stat gold"><b id="netV">Copy possible</b><span id="netT"></span></div>
+      </div>
+    </div>
+    <figcaption class="fig-c">The first two layouts are the ones from the lecture: 6-6-6-6 and 6-4-2-4-6. The third (6-8-10-8-6) is an illustrative extra to show a code wider than the input. In the squeezed layouts the gold column is the code.</figcaption>
+  </figure>
+
+  <h3>Adding a bottleneck</h3>
+  <div class="prose">
+    <p>With the layout 6 &rarr; 4 &rarr; 2 &rarr; 4 &rarr; 6, can the output still equal the input? Approximately, not perfectly. We cannot hope for a perfect copy, so we choose a loss that measures how far off the reconstruction is. A common choice is the mean squared error:</p>
+    <p class="math" role="img" aria-label="L equals one over n times the sum over i from 1 to n of the squared norm of x sub i minus x-hat sub i">L = <span class="frac"><span>1</span><span>n</span></span> &sum;<sub>i=1</sub><sup>n</sup> &#8214; x<sub>i</sub> &minus; x&#770;<sub>i</sub> &#8214;&sup2;</p>
+    <p>Now the key idea. The middle layer has only two numbers. From those two numbers alone, the second half of the network has to rebuild all six original values. If it manages that well, <span class="hl">those two numbers must have captured what matters about the input</span>.</p>
+  </div>
+
+  <div class="grid3" style="margin-top:20px">
+    <div class="card" style="border-top:5px solid var(--royal-600)"><h4>Encoder</h4><p style="margin:0">The first half. It compresses the input down to the narrow middle.</p></div>
+    <div class="card" style="border-top:5px solid var(--gold-500)"><h4>Bottleneck</h4><p style="margin:0">The narrow middle layer. Also called the latent representation, the code, or the embedding. All four names mean the same thing.</p></div>
+    <div class="card" style="border-top:5px solid var(--navy-900)"><h4>Decoder</h4><p style="margin:0">The second half. It decompresses the code back into a reconstruction of the input.</p></div>
+  </div>
+  <p class="prose" style="margin-top:16px">The whole network is an <strong>autoencoder</strong>.</p>
+
+  <div class="callout gold">
+    <span class="lab">Key idea: self-supervised</span>
+    <p>There is no label anywhere in this setup. The input is its own target. That is why autoencoders are described as unsupervised, or more precisely <strong>self-supervised</strong>: the supervision signal is manufactured from the data itself.</p>
+  </div>
+
+  <details><summary>If we only care about the code, why train a decoder at all?</summary><div class="dbody">
+    <p>Without the decoder there is no training signal. The decoder's job is to force the code to carry enough information to rebuild the input. We train the pair together and then keep the half we need, usually the encoder.</p>
+  </div></details>
+  <div class="callout">
+    <span class="lab">Why it is useful</span>
+    <p>Imagine a sparse 300-dimensional vector pushed down to 32 numbers. If the decoder can rebuild the 300 values from those 32, we have a compact description of the original: the data is compressed by reducing the number of features, and a shorter vector means faster models and lower latency downstream.</p>
+  </div>
+
+  <div class="quiz" data-quiz="q1"></div>
+</section>
+
+<!-- ============ FAMILIES ============ -->
+<section class="sec" id="families" aria-labelledby="h-fam">
+  <header class="sec-h"><span class="num">02</span><div><h2 id="h-fam">Undercomplete vs. overcomplete, and PCA</h2><p>The width of the code decides what the network is forced to do.</p></div></header>
+  <div class="grid2">
+    <div class="card" style="border-top:5px solid var(--royal-600)">
+      <h4>Undercomplete</h4>
+      <p style="margin:0">The code is <strong>narrower</strong> than the input. The narrow code does the work of forcing compression. Everything drawn so far is undercomplete.</p>
+    </div>
+    <div class="card" style="border-top:5px solid var(--gold-500)">
+      <h4>Overcomplete</h4>
+      <p style="margin:0">The code is <strong>wider</strong> than the input. Nothing forces compression anymore. This will cause trouble later in this read, and we will deliberately walk into it (section 07).</p>
+    </div>
+  </div>
+
+  <h3>Is an autoencoder like PCA?</h3>
+  <div class="prose">
+    <p>Yes. If the encoder and decoder are both linear and the loss is mean squared error, an autoencoder learns the same subspace as PCA, the one spanned by the top principal components. Add nonlinear activations and the autoencoder can capture curved structure that a straight-line projection cannot. In that sense, <strong>an autoencoder is a nonlinear generalization of PCA</strong>.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col"></th><th scope="col">PCA</th><th scope="col">Autoencoder</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Mapping</th><td>Linear</td><td>Nonlinear when activations are used</td></tr>
+        <tr><th scope="row">How it is found</th><td>Closed-form solution</td><td>Gradient descent, needs tuning</td></tr>
+        <tr><th scope="row">Scaling to huge data</th><td>Costly on very large matrices</td><td>Trains on mini-batches</td></tr>
+        <tr><th scope="row">Output</th><td>Ordered components</td><td>Unordered code dimensions</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <details><summary>Does the decoder have to mirror the encoder layer by layer?</summary><div class="dbody">
+    <p>No. Mirroring is a convention that many tutorials follow. What matters is the bottleneck. Decoders are often shallower or deeper than the encoder depending on the task.</p>
+  </div></details>
+  <details><summary>Interview angle: PCA is fast and needs no tuning. Why would anyone train an autoencoder instead?</summary><div class="dbody">
+    <p><strong>Good reasoning:</strong> when the structure in the data is nonlinear, when the encoder must be reused on new data as a learned function, or when the data is too large for a full matrix decomposition.</p>
+    <p><strong>A weak answer:</strong> &ldquo;Because neural networks are more powerful than PCA.&rdquo;</p>
+    <p><strong>A strong answer:</strong> &ldquo;I would fit PCA first as a baseline because it is cheap and interpretable. I would move to an autoencoder if the reconstruction error or the downstream metric shows that a linear projection is losing structure that matters, and I would accept the extra tuning cost only if it pays off.&rdquo;</p>
+  </div></details>
+  <div class="callout gold">
+    <span class="lab">A habit worth keeping</span>
+    <p>Baseline first: try the simple thing, then justify the complicated one. The rest of this read follows that habit.</p>
+  </div>
+</section>
+
+<!-- ============ BUILD ============ -->
+<section class="sec" id="build" aria-labelledby="h-build">
+  <header class="sec-h"><span class="num">03</span><div><h2 id="h-build">Building an autoencoder in PyTorch</h2><p>Define it, train it, and see what &ldquo;approximately equal&rdquo; looks like.</p></div></header>
+  <div class="prose">
+    <p>The model is a stack of linear layers with ReLU between them, no activation after the last encoder layer (so the code is unconstrained), and a final sigmoid on the decoder that keeps each reconstructed pixel between 0 and 1, matching the input range. The decoder is the encoder's layer sizes in reverse.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-h"><h4>Architecture explorer</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Architecture"><div class="seg" id="archBtns"></div></div>
+      <div class="chart" id="archChart"></div>
+      <div class="read" id="archRead"></div>
+    </div>
+    <figcaption class="fig-c">These are architectures trained in this read. Parameter counts and ratios are computed from the layer sizes (weights plus biases, encoder plus decoder); for the 32-unit model the total, 222,384, matches the lecture's printout. Column heights are drawn to scale with the square root of the layer width.</figcaption>
+  </figure>
+  <div class="callout">
+    <span class="lab">Compression</span>
+    <p>The 32-unit code compresses each image by a factor of about 24.5 (784 &divide; 32).</p>
+  </div>
+
+  <details class="code"><summary>Code: the model and the training helpers</summary><div class="dbody">
+<pre><code data-lang="py">def mlp(dims, last_act=None):
+    """Linear layers with ReLU between them. No activation after the last layer unless last_act is given."""
+    layers = []
+    for i in range(len(dims) - 1):
+        layers.append(nn.Linear(dims[i], dims[i + 1]))
+        if i &lt; len(dims) - 2:
+            layers.append(nn.ReLU())
+    if last_act is not None:
+        layers.append(last_act)
+    return nn.Sequential(*layers)
+
+
+class AutoEncoder(nn.Module):
+    def __init__(self, dims, out_act=None, code_act=False):
+        super().__init__()
+        enc_layers = list(mlp(dims))
+        if code_act:                                   # optional ReLU on the code itself
+            enc_layers.append(nn.ReLU())
+        self.encoder = nn.Sequential(*enc_layers)      # input -> ... -> code
+        self.decoder = mlp(dims[::-1], last_act=out_act)  # code -> ... -> reconstruction
+
+    def forward(self, x):
+        return self.decoder(self.encoder(x))
+
+
+ae = AutoEncoder([784, 128, 64, 32], out_act=nn.Sigmoid()).to(device)
+print(ae)
+print("Parameters:", f"{sum(p.numel() for p in ae.parameters()):,}")
+
+
+def add_noise(x, std):
+    if std == 0:
+        return x
+    return (x + std * torch.randn_like(x)).clamp(0, 1)
+
+
+def train_ae(model, x_tr, x_va, epochs=10, lr=1e-3, batch_size=256,
+             noise_std=0.0, loss_fn=None, log_every=1):
+    loss_fn = loss_fn or nn.MSELoss()
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    hist = {"train": [], "val": []}
+    for epoch in range(1, epochs + 1):
+        model.train()
+        perm = torch.randperm(len(x_tr), device=x_tr.device)
+        running = 0.0
+        for i in range(0, len(x_tr), batch_size):
+            xb = x_tr[perm[i:i + batch_size]]
+            loss = loss_fn(model(add_noise(xb, noise_std)), xb)   # target is the CLEAN input
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            running += loss.item() * len(xb)
+        model.eval()
+        with torch.no_grad():
+            val = loss_fn(model(add_noise(x_va, noise_std)), x_va).item()
+        hist["train"].append(running / len(x_tr))
+        hist["val"].append(val)
+        if log_every and epoch % log_every == 0:
+            print(f"Epoch {epoch:3d}/{epochs}  loss: {hist['train'][-1]:.5f}  val_loss: {val:.5f}")
+    return hist</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>AutoEncoder(
+  (encoder): Sequential(
+    (0): Linear(in_features=784, out_features=128, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=128, out_features=64, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=64, out_features=32, bias=True)
+  )
+  (decoder): Sequential(
+    (0): Linear(in_features=32, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=128, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=128, out_features=784, bias=True)
+    (5): Sigmoid()
+  )
+)
+Parameters: 222,384</code></pre>
+  </div></details>
+  <div class="prose">
+    <p>Two things matter in the training helper: the input is also the target, and <code>noise_std</code> lets us corrupt the input later without changing anything else.</p>
+  </div>
+
+  <h3>Training it</h3>
+  <figure class="fig">
+    <div class="fig-h"><h4>32-unit autoencoder, 10 epochs</h4><span>From the lecture run</span></div>
+    <div class="fig-b"><div class="chart" id="hist32"></div></div>
+    <figcaption class="fig-c">Loss falls smoothly from 0.07536 to 0.01761 on training data and from 0.05526 to 0.01696 on validation (test) data. Both curves fall together and stay close: the network is not memorizing the training images, it is learning something that transfers to images it has never seen. (The training value is a running average over the epoch, which is why it starts above the validation value.)</figcaption>
+  </figure>
+  <details class="code"><summary>Code: train and inspect reconstructions</summary><div class="dbody">
+<pre><code data-lang="py">hist_ae = train_ae(ae, x_train, x_test, epochs=10)
+plot_hist(hist_ae, "32-unit autoencoder")
+
+ae.eval()
+with torch.no_grad():
+    recon = ae(x_test[:10])
+show_rows([x_test[:10], recon], ["original", "reconstruction"])</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>Epoch   1/10  loss: 0.07536  val_loss: 0.05526
+Epoch   2/10  loss: 0.04218  val_loss: 0.03400
+Epoch   3/10  loss: 0.03117  val_loss: 0.02851
+Epoch   4/10  loss: 0.02707  val_loss: 0.02518
+Epoch   5/10  loss: 0.02440  val_loss: 0.02304
+Epoch   6/10  loss: 0.02240  val_loss: 0.02119
+Epoch   7/10  loss: 0.02074  val_loss: 0.01983
+Epoch   8/10  loss: 0.01956  val_loss: 0.01865
+Epoch   9/10  loss: 0.01848  val_loss: 0.01773
+Epoch  10/10  loss: 0.01761  val_loss: 0.01696</code></pre>
+  </div></details>
+
+  <h3>What &ldquo;approximately equal&rdquo; means</h3>
+  <div class="prose">
+    <p>Compared with the originals, the reconstructions are recognizable but softer. The worst ones are ambiguous or unusually written digits, which look blurrier or shifted. The reason is that mean squared error rewards predicting an average of plausible pixel values when the code cannot pin down the exact stroke. In short: 784 numbers were squeezed into 32 and rebuilt into something recognizable, but a 32-number code cannot hold every detail.</p>
+  </div>
+  <div class="callout gold">
+    <span class="lab">Important</span>
+    <p>The reconstruction loss is a training signal. It is <strong>not</strong> a report card for how good the code is. The next sections show exactly why.</p>
+  </div>
+</section>
+
+<!-- ============ SIZE ============ -->
+<section class="sec" id="size" aria-labelledby="h-size">
+  <header class="sec-h"><span class="num">04</span><div><h2 id="h-size">Choosing the bottleneck size</h2><p>The main design decision in an undercomplete autoencoder.</p></div></header>
+  <div class="prose">
+    <p>Change only one number, the code size, and watch validation reconstruction error. Four autoencoders (784 &rarr; 256 &rarr; <i>k</i>, with <i>k</i> = 2, 8, 32, 128) were each trained for 5 epochs.</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Reconstruction error vs. code size</h4><span>From the lecture run</span></div>
+    <div class="fig-b">
+      <div class="chart" id="sizeChart"></div>
+      <div class="row" role="group" aria-label="Code size"><span style="font-weight:700">Inspect a code size:</span><div class="seg" id="sizeBtns"></div></div>
+      <div class="read" id="sizeRead"></div>
+    </div>
+    <figcaption class="fig-c">In a typical run the error falls as the code grows, with diminishing returns after a point: a wider code leaves less pressure to compress, so more detail survives. With only 5 epochs per run, two neighboring sizes can occasionally swap order because of run-to-run noise, which is itself a reminder of the diminishing returns. The compression factor is 784 divided by the code size.</figcaption>
+  </figure>
+  <details class="code"><summary>Code: the size sweep</summary><div class="dbody">
+<pre><code data-lang="py">sizes = [2, 8, 32, 128]
+val_mse = []
+for k in sizes:
+    torch.manual_seed(0)
+    m = AutoEncoder([784, 256, k], out_act=nn.Sigmoid()).to(device)
+    h = train_ae(m, x_train, x_test, epochs=5, log_every=0)
+    val_mse.append(h["val"][-1])
+    print(f"code size {k:3d}: validation MSE = {h['val'][-1]:.5f}")</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>code size   2: validation MSE = 0.04754
+code size   8: validation MSE = 0.02233
+code size  32: validation MSE = 0.01017
+code size 128: validation MSE = 0.00772</code></pre>
+  </div></details>
+  <details><summary>Interview angle: how would you choose the bottleneck size in a real project?</summary><div class="dbody">
+    <p><strong>Good reasoning:</strong> start from the constraint (storage, latency, or the input size the downstream model accepts), look for the elbow in the reconstruction curve, and confirm with the metric of the downstream task rather than reconstruction error alone.</p>
+    <p><strong>A weak answer:</strong> &ldquo;Pick the size with the lowest reconstruction error.&rdquo;</p>
+    <p><strong>A strong answer:</strong> &ldquo;Reconstruction error always improves as the code grows, so it cannot choose the size on its own. I would set a budget from latency or storage, find the point where extra units stop paying off, and then validate on the task the code will be used for.&rdquo;</p>
+  </div></details>
+  <div class="quiz" data-quiz="q2"></div>
+</section>
+
+<!-- ============ TWO NUMBERS ============ -->
+<section class="sec" id="twod" aria-labelledby="h-twod">
+  <header class="sec-h"><span class="num">05</span><div><h2 id="h-twod">What can two numbers say about a digit?</h2><p>The worst reconstruction of all has one superpower: you can plot it.</p></div></header>
+  <div class="prose">
+    <p>The 2-unit code had the worst reconstruction error, so it is tempting to write it off. But there is one thing you can do with two numbers that you cannot do with thirty-two: <strong>plot them</strong>.</p>
+    <p>The experiment: compress every 784-pixel image into two numbers, use them as an x and y coordinate, and plot the test images as points. The loss only asks the network to redraw pixels, and digit identity appears nowhere in training. Afterward, each point is colored by its true digit, with the labels used only for coloring. What would you expect: a shapeless cloud, visible groups with some overlap, or ten cleanly separated clusters?</p>
+    <p>The result is <strong>visible groups with some overlap</strong>. The network was only ever asked to redraw pixels, and yet images of the same digit land near each other: ones are grouped, zeros are grouped, and the network was never told that a one exists.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-h"><h4>Why similar pixels become nearby points</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <ol class="loop" id="whyLoop"></ol>
+      <div class="row"><button class="btn ghost sm" id="whyPrev">Previous step</button><button class="btn sm" id="whyNext">Next step</button></div>
+      <p id="whyText" aria-live="polite" style="margin:10px 0 0"></p>
+    </div>
+    <figcaption class="fig-c">The structure was already in the data. The reconstruction objective forced the encoder to expose it.</figcaption>
+  </figure>
+
+  <div class="callout gold">
+    <span class="lab">Important: not a guarantee</span>
+    <p>The groups are not perfect. Fours and nines overlap, and so do threes and fives, because those digits look alike in pixel space. The autoencoder organizes images by <em>visual similarity</em>, which is close to class identity but not the same thing. That is why the code is treated as a feature to test, not a guarantee.</p>
+  </div>
+
+  <h3>Three ways to get two coordinates</h3>
+  <div class="prose"><p>The lecture compares the 2-unit autoencoder against two baselines on the same 1,000 test images: PCA and t-SNE.</p></div>
+  <figure class="fig">
+    <div class="fig-h"><h4>PCA vs. autoencoder vs. t-SNE</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Method"><div class="seg" id="methBtns"></div></div>
+      <div class="grid3" id="methRead" aria-live="polite"></div>
+    </div>
+  </figure>
+
+  <details><summary>t-SNE looks cleanest. Why not just use t-SNE?</summary><div class="dbody">
+    <p>t-SNE has no encoder. It produces coordinates for the exact points it was given, and to place a brand-new image it has to be rerun. It also distorts distances, so it is only used for visualization. An autoencoder gives a reusable function that maps any new image to a code, which is what makes it usable in a product.</p>
+  </div></details>
+  <details><summary>If an autoencoder generalizes PCA, why does PCA look worse here?</summary><div class="dbody">
+    <p>PCA is limited to straight-line projections, and two straight directions cannot unfold how handwritten digits vary. The nonlinear encoder can bend the space, which is the extra power the nonlinearity buys.</p>
+  </div></details>
+
+  <details class="code"><summary>Code: the 2-unit autoencoder and the three-way comparison</summary><div class="dbody">
+<pre><code data-lang="py">torch.manual_seed(42)
+ae2 = AutoEncoder([784, 512, 128, 2], out_act=nn.Sigmoid()).to(device)
+hist_ae2 = train_ae(ae2, x_train, x_test, epochs=20, log_every=5)
+
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+
+n_pts = 1000
+xs = x_test[:n_pts]
+labels = y_test[:n_pts].numpy()
+
+ae2.eval()
+with torch.no_grad():
+    z_ae = ae2.encoder(xs).cpu().numpy()
+z_pca = PCA(n_components=2).fit_transform(xs.cpu().numpy())
+z_tsne = TSNE(n_components=2, init="pca", random_state=42).fit_transform(xs.cpu().numpy())</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>Epoch   5/20  loss: 0.04178  val_loss: 0.04110
+Epoch  10/20  loss: 0.03853  val_loss: 0.03874
+Epoch  15/20  loss: 0.03709  val_loss: 0.03738
+Epoch  20/20  loss: 0.03617  val_loss: 0.03676</code></pre>
+  </div></details>
+
+  <div class="try">
+    <span class="lab">Try it: audit an AI explanation against the plot</span>
+    <p>Copy the prompt below into Colab AI or any assistant you use, then read the answer. Mark one claim you can verify from the scatter plot, and one you cannot.</p>
+<pre style="background:rgba(255,255,255,.08);border-radius:10px;white-space:pre-wrap;color:#EAF0FF">I trained an autoencoder on MNIST with a 2-unit bottleneck. Training used only pixel reconstruction loss and no labels. When I color the 2D codes by digit label, images of the same digit form groups, though 4 and 9 overlap. Explain why this happens, and tell me which parts of your explanation I can verify from the plot itself.</pre>
+    <p style="margin-top:10px">The goal is to separate what the plot shows from what is merely plausible narrative. Flag any claim like &ldquo;the network understands digits&rdquo;: the plot only shows that similar images get nearby codes. Claims about &ldquo;semantic meaning&rdquo; or &ldquo;understanding&rdquo; are typically the unverifiable ones.</p>
+  </div>
+  <div class="prose"><p>So a two-number code already carries digit structure. Now imagine a thirty-two-number code. If the structure is really there, we should be able to use those codes as input features for a task we do care about.</p></div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="sec" id="features" aria-labelledby="h-feat">
+  <header class="sec-h"><span class="num">06</span><div><h2 id="h-feat">The encoder as a feature extractor</h2><p>Mountains of unlabeled data, a handful of labels.</p></div></header>
+  <div class="prose">
+    <p>Structure is only valuable if it helps a task. The most common situation in companies is lots of unlabeled data and few labels, because labeling costs money. So: the 32-unit autoencoder was trained on all 60,000 training images without labels. Now suppose only <strong>500</strong> have labels. Train a simple classifier two ways, on the raw 784 pixels and on the 32-number code. Which scores higher on the test set?</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Test accuracy with 500 labeled images</h4><span>From the lecture run</span></div>
+    <div class="fig-b"><div class="chart" id="featChart" role="img" aria-label="Test accuracy: raw pixels 0.859, autoencoder embeddings 0.854, frozen encoder plus linear head 0.853."></div></div>
+    <figcaption class="fig-c">Logistic regression on raw pixels (784 features): 0.859. On the autoencoder embeddings (32 features): 0.854. A frozen encoder with a trained linear head, built next: 0.853. The honest reading: the embedding is a compact, reusable summary that matches the raw pixels here with 24&times; fewer features, and whether it beats the raw features is an empirical question answered by running the comparison, not by assuming.</figcaption>
+  </figure>
+
+  <h3>Freezing the encoder in PyTorch</h3>
+  <div class="prose">
+    <p>In a real pipeline you attach a small head to the encoder and decide which parts get trained. <strong>Freezing</strong> means setting <code>requires_grad</code> to <code>False</code> so the optimizer leaves those weights alone. The recipe has two modes:</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Feature extraction vs. fine-tuning</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Training mode"><div class="seg"><button class="btn" id="frzFeat" aria-pressed="true">Feature extraction (freeze)</button><button class="btn" id="frzFine" aria-pressed="false">Fine-tuning (unfreeze)</button></div></div>
+      <div class="frz" id="frz"></div>
+      <div class="read" id="frzRead"></div>
+    </div>
+    <figcaption class="fig-c">Parameter counts for the frozen run are from the lecture (330 trainable of 111,146). Fine-tuning would train every parameter, 111,146, by arithmetic. With only 500 labels, fewer trainable weights means less room to overfit.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="callout" style="margin:0"><span class="lab">Freeze when&hellip;</span><p>labeled data is tiny, or the new task is close to the pretraining data.</p></div>
+    <div class="callout gold" style="margin:0"><span class="lab">Fine-tune when&hellip;</span><p>there are enough labels and the new data differs from what the encoder saw, using a small learning rate. A common middle path: train the head first, then unfreeze the encoder gradually.</p></div>
+  </div>
+  <div class="prose" style="margin-top:18px">
+    <p>It is the same idea as taking a model trained on one medical imaging task and reusing it for another: keep the early layers that learned general structure, and retrain the part specific to the new task.</p>
+  </div>
+  <div class="callout gold">
+    <span class="lab">Important</span>
+    <p>Today's large pretrained encoders for images and text are usually trained with objectives such as contrastive learning or masked prediction, not pure reconstruction. The workflow is identical, though: pretrain on plentiful unlabeled data, then reuse the encoder.</p>
+  </div>
+  <details class="code"><summary>Code: logistic regression on pixels vs codes, then a frozen encoder</summary><div class="dbody">
+<pre><code data-lang="py">from sklearn.linear_model import LogisticRegression
+
+n_labeled = 500
+torch.manual_seed(0)
+idx = torch.randperm(len(x_train))[:n_labeled]
+y_lab = y_train[idx].numpy()
+
+ae.eval()
+with torch.no_grad():
+    x_lab = x_train[idx.to(device)]
+    z_lab = ae.encoder(x_lab).cpu().numpy()
+    z_test = ae.encoder(x_test).cpu().numpy()
+
+raw_clf = LogisticRegression(max_iter=5000).fit(x_lab.cpu().numpy(), y_lab)
+emb_clf = LogisticRegression(max_iter=5000).fit(z_lab, y_lab)
+
+print(f"raw pixels    ({784:3d} features): {raw_clf.score(x_test.cpu().numpy(), y_test.numpy()):.3f}")
+print(f"AE embeddings ({z_lab.shape[1]:3d} features): {emb_clf.score(z_test, y_test.numpy()):.3f}")
+
+clf = nn.Sequential(ae.encoder, nn.Linear(32, 10)).to(device)   # note: ae.encoder is shared, so freezing it also freezes ae's encoder
+for p in clf[0].parameters():
+    p.requires_grad = False                                     # freeze the pretrained encoder
+
+n_total = sum(p.numel() for p in clf.parameters())
+n_train = sum(p.numel() for p in clf.parameters() if p.requires_grad)
+print(f"trainable parameters: {n_train:,} of {n_total:,}")
+
+opt = torch.optim.Adam(clf[1].parameters(), lr=1e-2)             # optimizer only sees the new head
+xl, yl = x_lab, y_train[idx].to(device)
+for step in range(300):
+    loss = F.cross_entropy(clf(xl), yl)
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+
+with torch.no_grad():
+    acc = (clf(x_test).argmax(dim=1).cpu() == y_test).float().mean().item()
+print(f"frozen encoder + linear head, test accuracy: {acc:.3f}")</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>raw pixels    (784 features): 0.859
+AE embeddings ( 32 features): 0.854
+trainable parameters: 330 of 111,146
+frozen encoder + linear head, test accuracy: 0.853</code></pre>
+  </div></details>
+  <div class="quiz" data-quiz="q3"></div>
+</section>
+
+<!-- ============ TRAP ============ -->
+<section class="sec" id="trap" aria-labelledby="h-trap">
+  <header class="sec-h"><span class="num">07</span><div><h2 id="h-trap">The identity trap and denoising autoencoders</h2><p>Everything so far worked because the bottleneck squeezes.</p></div></header>
+  <div class="prose">
+    <p>A practitioner's instinct is often the opposite: a bigger network must learn better features. Nothing stops us from trying. Build an <strong>overcomplete</strong> autoencoder: 784 pixels into a code of 1,024 units, wider than the input, and back out to 784. The wider code has more capacity, so will reconstruction error on clean test images be higher, lower, or about the same as the 32-unit model?</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Validation reconstruction error (MSE)</h4><span>From the lecture run</span></div>
+    <div class="fig-b"><div class="chart" id="trapChart" role="img" aria-label="Validation MSE: 32-unit code 0.01696, 1024-unit code 0.00272, denoising 1024-unit 0.01270 measured on noisy inputs."></div></div>
+    <figcaption class="fig-c">The 1,024-unit model scores 0.00272 against 0.01696 for the 32-unit model: much lower, so by the only metric watched so far it is a better model. The denoising model's 0.01270 is measured with noisy inputs against clean targets, so it is not directly comparable to the other two; it is shown for reference. (Wide model: 5 epochs 0.00422, 10 epochs 0.00272.)</figcaption>
+  </figure>
+  <div class="prose">
+    <p>Now give both models something they have never seen: digits with heavy random noise added. The 1,024-unit output keeps much of the grain and speckle of the noisy input, while the 32-unit output is smoother, because a 32-number code cannot carry the noise. (The wide model is not always a perfect copy, so keep the conclusion tied to the comparison: the wide model preserves noise that the narrow model cannot.)</p>
+    <p>The wide autoencoder found the shortcut from the start of this read: with a code wider than the input, it can pass pixels through and get a near-perfect score without learning anything about digits. This is the <strong>identity trap</strong>. The low loss was real, and it was also meaningless. The narrow model produced a cleaner picture almost by accident.</p>
+  </div>
+
+  <h3>The fix: take the shortcut away</h3>
+  <div class="prose">
+    <p>If copying is the shortcut, corrupt the input but keep the target clean. Copying the input now means copying the noise, which increases the loss. The only way to reduce the loss is to learn what digits actually look like and separate signal from noise. This is a <strong>denoising autoencoder</strong>. The architecture does not change; one argument does: <code>noise_std=0.5</code>.</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>What the loss compares</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Autoencoder type"><div class="seg"><button class="btn" id="dnPlain" aria-pressed="true">Plain autoencoder</button><button class="btn" id="dnDen" aria-pressed="false">Denoising autoencoder</button></div></div>
+      <div class="pair" id="dnPair" aria-live="polite"></div>
+    </div>
+    <figcaption class="fig-c">Same architecture, same width, same capacity. The only difference is what the network is asked to do during training, and the denoising version now removes the noise.</figcaption>
+  </figure>
+  <div class="callout gold">
+    <span class="lab">Implementation detail worth checking</span>
+    <p>The noise is generated fresh for every batch in the training helper, so the network never sees the same corruption twice and cannot memorize one. Check this in any denoising implementation.</p>
+  </div>
+  <div class="callout">
+    <span class="lab">Bigger than MNIST</span>
+    <p>Corrupt-and-reconstruct is how denoising is done on sensor data and medical scans. It is also the core objective behind diffusion image generators, which are trained to remove noise, and behind masked pretraining, where a model reconstructs hidden parts of its input.</p>
+  </div>
+  <details><summary>Interview angle: your autoencoder reaches near-zero training and validation loss. Do you ship it?</summary><div class="dbody">
+    <p><strong>Good reasoning:</strong> no, not on that evidence. Check the code width against the input width, test on corrupted or out-of-distribution inputs, and evaluate the code on the downstream task.</p>
+    <p><strong>A weak answer:</strong> &ldquo;Yes, low validation loss means it generalizes.&rdquo;</p>
+    <p><strong>A strong answer:</strong> &ldquo;Low reconstruction error only proves the model can reproduce its input. I would check whether the code is narrower than the input, feed it corrupted inputs to see whether it just copies them, and measure the downstream task before trusting it.&rdquo;</p>
+  </div></details>
+  <details class="code"><summary>Code: the wide model, the noisy test and the denoising model</summary><div class="dbody">
+<pre><code data-lang="py">torch.manual_seed(42)
+wide = AutoEncoder([784, 1024], out_act=nn.Sigmoid(), code_act=True).to(device)
+hist_wide = train_ae(wide, x_train, x_test, epochs=10, log_every=5)
+
+print(f"\n32-unit code   validation MSE: {hist_ae['val'][-1]:.5f}")
+print(f"1024-unit code validation MSE: {hist_wide['val'][-1]:.5f}")
+
+torch.manual_seed(1)
+x_noisy = add_noise(x_test[:10], 0.5)
+
+torch.manual_seed(42)
+den = AutoEncoder([784, 1024], out_act=nn.Sigmoid(), code_act=True).to(device)
+hist_den = train_ae(den, x_train, x_test, epochs=10, noise_std=0.5, log_every=5)</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>Epoch   5/10  loss: 0.00475  val_loss: 0.00422
+Epoch  10/10  loss: 0.00290  val_loss: 0.00272
+
+32-unit code   validation MSE: 0.01696
+1024-unit code validation MSE: 0.00272
+
+Epoch   5/10  loss: 0.01502  val_loss: 0.01450
+Epoch  10/10  loss: 0.01304  val_loss: 0.01270</code></pre>
+  </div></details>
+  <div class="quiz" data-quiz="q4"></div>
+</section>
+
+<!-- ============ DEBUG ============ -->
+<section class="sec" id="debug" aria-labelledby="h-debug">
+  <header class="sec-h"><span class="num">08</span><div><h2 id="h-debug">AI-assisted debugging: diagnose a broken autoencoder</h2><p>Use an assistant for hypotheses, then verify with numbers.</p></div></header>
+  <div class="prose">
+    <p>We spotted the identity trap because we knew to look for it. In practice a broken model arrives with no warning label. AI assistants can be a fast second pair of eyes, as long as you stay in charge of the reasoning: <strong>the AI's diagnosis is accepted only after the fix is run and the numbers change</strong>.</p>
+    <p>A teammate trained the same 32-unit architecture on MNIST and sent this result. Something is wrong.</p>
+  </div>
+  <div class="grid3">
+    <div class="stat gold"><b>7218.1</b><span>training loss, epoch 1 (7217.3 at epoch 2)</span></div>
+    <div class="stat"><b>7343.5</b><span>validation loss, epochs 1 and 2: it does not drop meaningfully</span></div>
+    <div class="stat"><b>No digit</b><span>every reconstruction looks nearly the same, with no digit in it</span></div>
+  </div>
+
+  <div class="prose" style="margin-top:20px"><h4>The workflow</h4></div>
+  <ol class="take" style="margin-bottom:20px">
+    <li>Run the cell and look at the loss values and the reconstructions.</li>
+    <li>Before opening any AI tool, write down one sentence: your own hypothesis about what is wrong.</li>
+    <li>Give an assistant the prompt below plus the printed model architecture (<code>print(buggy)</code>).</li>
+    <li>Compare its ranked list with your hypothesis, and pick one proposed experiment you could run in under a minute.</li>
+    <li>Run the fix and compare the numbers.</li>
+  </ol>
+  <div class="try">
+    <span class="lab">Prompt to use</span>
+<pre style="background:rgba(255,255,255,.08);border-radius:10px;white-space:pre-wrap;color:#EAF0FF">I trained an autoencoder on MNIST with layers 784 -> 128 -> 64 -> 32 -> 64 -> 128 -> 784, ReLU between layers, a sigmoid on the output, MSE loss, and Adam with learning rate 0.001. The training loss is in the thousands and does not drop meaningfully across epochs, and every reconstruction looks nearly the same, with no digit in it. Give me your top 3 hypotheses ranked by likelihood, and for each one a quick experiment that would confirm or rule it out. Do not rewrite my code yet.</pre>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-h"><h4>Why a sigmoid output can't match 0&ndash;255 pixels</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row"><label class="rng"><span>A bright stroke pixel's value: <output id="scOut">255</output></span>
+        <input type="range" id="scVal" min="0" max="255" step="1" value="255" aria-label="Pixel value"></label></div>
+      <div class="read" id="scRead"></div>
+    </div>
+    <figcaption class="fig-c">A sigmoid output can only produce values between 0 and 1, so for a target above 1 the smallest possible squared error is (target &minus; 1)&sup2;. On the teammate's 0&ndash;255 data every bright pixel carries a large irreducible error, so the loss can never get small and the sigmoid saturates. Scaled to [0, 1], the floor disappears.</figcaption>
+  </figure>
+
+  <div class="callout gold">
+    <span class="lab">The diagnosis</span>
+    <p>The input pixels range from 0 to 255 while the sigmoid output can only produce values between 0 and 1. The one-minute experiment is to print the minimum and maximum of the input. Some assistants will also suggest learning-rate or architecture changes; use the loss magnitude to discriminate between hypotheses. A loss in the thousands on data that should give a loss well below 1 points at a <strong>scale mismatch</strong> before it points at anything else.</p>
+  </div>
+  <div class="prose">
+    <p>After the fix (the only change: pixels scaled to [0, 1]) the loss drops from the thousands to a small fraction of one, and the reconstructions look like digits again. The lesson is about how to use the assistant: it proposed causes, and we tested them with numbers we could compute. A quick check of the input range would have caught this in seconds, and it is the first thing worth checking whenever a loss looks the wrong size.</p>
+  </div>
+  <details class="code"><summary>Code: the buggy run and the fix</summary><div class="dbody">
+<pre><code data-lang="py">x_train_raw, x_test_raw = x_train * 255, x_test * 255       # the teammate's version of the data
+
+torch.manual_seed(42)
+buggy = AutoEncoder([784, 128, 64, 32], out_act=nn.Sigmoid()).to(device)
+hist_buggy = train_ae(buggy, x_train_raw, x_test_raw, epochs=5, log_every=1)
+
+# the fix
+print("input range:", x_train_raw.min().item(), "to", x_train_raw.max().item())
+print("output range: 0 to 1 (sigmoid)")
+
+torch.manual_seed(42)
+fixed = AutoEncoder([784, 128, 64, 32], out_act=nn.Sigmoid()).to(device)
+hist_fixed = train_ae(fixed, x_train, x_test, epochs=5, log_every=1)          # only change: pixels scaled to [0, 1]</code></pre>
+<div class="outlab">Output (buggy run)</div>
+<pre class="out"><code>Epoch   1/5  loss: 7218.10934  val_loss: 7343.46289
+Epoch   2/5  loss: 7217.26407  val_loss: 7343.45752</code></pre>
+  </div></details>
+</section>
+
+<!-- ============ RECS ============ -->
+<section class="sec" id="recs" aria-labelledby="h-recs">
+  <header class="sec-h"><span class="num">09</span><div><h2 id="h-recs">Recommendations from sparse data</h2><p>When most of the table is empty, missing is not zero.</p></div></header>
+  <div class="prose">
+    <p>So far the data was dense: every pixel had a value. Real business data is often the opposite. Picture a table where each row is a movie, each column a user, and each cell the rating that user gave. Most users have rated a tiny fraction of the movies, so most cells are empty.</p>
+    <p>The plan: treat each movie's row of ratings as the input, learn a dense embedding for it, and use the embeddings to find similar movies.</p>
+  </div>
+  <div class="grid4">
+    <div class="stat"><b>105,339</b><span>ratings for 10,325 movies</span></div>
+    <div class="stat"><b>&ge; 20</b><span>minimum ratings per movie kept (minimum support)</span></div>
+    <div class="stat"><b>1,322 &times; 668</b><span>movies &times; users after filtering</span></div>
+    <div class="stat gold"><b>8.0%</b><span>of that matrix holds a real rating, so about 92% is empty</span></div>
+  </div>
+  <div class="prose" style="margin-top:18px"><p>Many movies have only a handful of ratings, and a row with two ratings gives the network almost nothing to learn from, which is why teams set a minimum support.</p></div>
+
+  <h3>Missing is not zero</h3>
+  <div class="prose">
+    <p>To build the table, the empty cells were filled with zero. But a zero does not mean the user hated the movie; it means the user never rated it. With ordinary mean squared error over the whole row, most targets are zeros, and the easiest way to lower the loss is to predict zero almost everywhere. The fix: compute the loss only over entries a user actually rated, using a mask built from the target.</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Plain MSE vs. masked MSE</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Loss type"><div class="seg"><button class="btn" id="mkPlain" aria-pressed="true">Plain MSE (all cells)</button><button class="btn" id="mkMask" aria-pressed="false">Masked MSE (rated cells only)</button></div></div>
+      <div class="mgrid" id="mgrid" role="img" aria-label="Illustrative ratings grid of movies by users, mostly empty"></div>
+      <ul class="legend" style="margin-top:10px"><li><span class="sw" style="background:var(--gold-500);border:1px solid var(--navy-900)"></span>Rated cell (rating shown)</li><li><span class="sw" style="background:var(--royal-100);border:1px solid var(--royal-300)"></span>Empty cell (stored as 0)</li><li><span class="sw" style="background:#fff;border:2px dashed var(--navy-900)"></span>Ignored by the loss</li></ul>
+      <div class="read" id="mkRead"></div>
+    </div>
+    <figcaption class="fig-c"><strong>Illustrative:</strong> the grid is a made-up 10&times;14 ratings table with roughly the same emptiness as the lecture's matrix, with ratings scaled to [0, 1] as in the lecture (divided by 5). The readout shows the loss of a lazy model that predicts 0 for every cell. Under plain MSE it scores deceptively well; under masked MSE it is exposed.</figcaption>
+  </figure>
+
+  <figure class="fig">
+    <div class="fig-h"><h4>Recommender autoencoder training (masked loss)</h4><span>From the lecture run</span></div>
+    <div class="fig-b"><div class="chart" id="recHist"></div></div>
+    <figcaption class="fig-c">The input is each movie's row of 668 user ratings, encoded 668 &rarr; 512 &rarr; 256 &rarr; 128, with a linear output because this is regression. Validation loss flattens near 0.0297 while training loss keeps falling (0.02669 at epoch 30). Where the curves separate marks overfitting, and it is where early stopping would end training.</figcaption>
+  </figure>
+  <div class="callout gold">
+    <span class="lab">Important</span>
+    <p>This validation loss only says the model is not memorizing its training movies. It does <strong>not</strong> measure recommendation quality, because the held-out movies still show their ratings to the encoder.</p>
+  </div>
+
+  <h3>Finding similar movies</h3>
+  <div class="prose">
+    <p>Extract the embeddings, one 128-number vector per movie, and use cosine similarity to find the closest movies to a given one. Here are the top ten neighbors of <em>Liar Liar</em>, before and after centering the embeddings (subtracting the average embedding, so similarity measures how a movie differs from the typical movie).</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Neighbors of &ldquo;Liar Liar (1997)&rdquo;</h4><span>From the lecture run</span></div>
+    <div class="fig-b">
+      <div class="row" role="group" aria-label="Embedding version"><div class="seg"><button class="btn" id="nbRaw" aria-pressed="true">Raw embeddings</button><button class="btn" id="nbCen" aria-pressed="false">Centered embeddings</button></div>
+        <label style="display:inline-flex;gap:8px;align-items:center;font-weight:600;font-size:.9rem"><input type="checkbox" id="nbZoom"> Zoom the bars to the score range</label></div>
+      <div id="nbList" class="nb"></div>
+      <div class="read" id="nbRead"></div>
+    </div>
+    <figcaption class="fig-c">Cosine-similarity scores of the ten nearest neighbors (the query movie itself, at 1.000, is left out). With raw embeddings the scores sit in a narrow band close to 1, almost indistinguishable, so a ranking built on tiny differences is fragile. Centering spreads them out; whether the centered list reads better is a judgment you make by looking at it, not a promise.</figcaption>
+  </figure>
+
+  <details class="code"><summary>Code: masked loss, training and similarity search</summary><div class="dbody">
+<pre><code data-lang="py">import pandas as pd
+
+ratings = pd.read_csv("ratings.csv")
+movies = pd.read_csv("movies.csv")
+print(ratings.shape, "ratings for", ratings.movieId.nunique(), "movies")
+
+counts = ratings.movieId.value_counts()
+popular = counts[counts >= 20].index
+ratings = ratings[ratings.movieId.isin(popular)]
+
+rm = ratings.pivot(index="movieId", columns="userId", values="rating").fillna(0)
+print("matrix shape (movies x users):", rm.shape)
+print(f"filled entries: {(rm.values > 0).mean():.1%}")
+
+
+def masked_mse(pred, target):
+    mask = (target > 0).float()                       # 1 where a real rating exists
+    return ((pred - target) ** 2 * mask).sum() / mask.sum()
+
+
+X = torch.tensor(rm.values / 5.0, dtype=torch.float32)                 # ratings scaled to [0, 1]; 0 means not rated
+perm = torch.randperm(len(X), generator=torch.Generator().manual_seed(42))
+n_val = int(0.2 * len(X))
+X_val, X_train = X[perm[:n_val]].to(device), X[perm[n_val:]].to(device)
+
+torch.manual_seed(42)
+rec = AutoEncoder([X.shape[1], 512, 256, 128]).to(device)              # linear output: this is regression
+hist_rec = train_ae(rec, X_train, X_val, epochs=30, loss_fn=masked_mse, log_every=5)
+
+rec.eval()
+with torch.no_grad():
+    emb = rec.encoder(X.to(device)).cpu()
+
+def top_similar(title_part, emb, k=10):
+    movie_id = movies[movies.title.str.contains(title_part, regex=False)].iloc[0].movieId
+    i = movie_ids.index(movie_id)
+    e = F.normalize(emb, dim=1)
+    scores = e @ e[i]
+    top = scores.topk(k + 1)
+    ...
+
+print(top_similar("Liar Liar", emb - emb.mean(dim=0)).to_string())   # centered version</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>(105339, 4) ratings for 10325 movies
+matrix shape (movies x users): (1322, 668)
+filled entries: 8.0%
+Epoch   5/30  loss: 0.06107  val_loss: 0.03747
+Epoch  10/30  loss: 0.03022  val_loss: 0.03130
+Epoch  15/30  loss: 0.02808  val_loss: 0.03005
+Epoch  20/30  loss: 0.02741  val_loss: 0.02976
+Epoch  25/30  loss: 0.02702  val_loss: 0.02971
+Epoch  30/30  loss: 0.02669  val_loss: 0.02965
+embeddings: torch.Size([1322, 128])</code></pre>
+  </div></details>
+
+  <details><summary>Interview angle: how would you evaluate this recommender before shipping it?</summary><div class="dbody">
+    <p><strong>Good reasoning:</strong> eyeballing a list of neighbors is a sanity check, not an evaluation. Hide a portion of each user's ratings, ask the model to rank them, and measure ranking metrics such as recall at k or NDCG. Compare against simple baselines such as popularity. Finally, run an online A/B test, because offline scores do not always predict user behavior.</p>
+    <p><strong>A weak answer:</strong> &ldquo;Check that the reconstruction loss is low.&rdquo;</p>
+    <p><strong>A strong answer:</strong> &ldquo;Reconstruction loss does not measure recommendation quality. I would hold out ratings, measure recall at k against a popularity baseline, inspect a few lists by eye, and confirm with an online test.&rdquo;</p>
+  </div></details>
+  <details><summary>Could we do the same thing for users instead of movies?</summary><div class="dbody">
+    <p>Yes. Transpose the matrix so each row is a user, train the same autoencoder, and use the codes to find similar users.</p>
+  </div></details>
+  <div class="quiz" data-quiz="q5"></div>
+</section>
+
+<!-- ============ ANOMALY ============ -->
+<section class="sec" id="anomaly" aria-labelledby="h-anom">
+  <header class="sec-h"><span class="num">10</span><div><h2 id="h-anom">Anomaly detection and the 2026 landscape</h2><p>One more property of autoencoders, and where the ideas live today.</p></div></header>
+  <h3 style="margin-top:0">Reconstruction error as an anomaly detector</h3>
+  <div class="prose">
+    <p>An autoencoder is only good at rebuilding the kind of data it was trained on. So rank every test image by its reconstruction error and look at both ends. The images rebuilt worst are the ones least like the rest of the data: unusual handwriting, very thick or very thin strokes, odd shapes. The claim to hold on to: <strong>high error means unusual compared with the training data, which is not the same as wrong</strong>.</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>Reconstruction error across the 10,000 test images</h4><span>From the lecture run</span></div>
+    <div class="fig-b"><div id="anomLine" class="anom"></div><div class="read" id="anomRead"></div></div>
+    <figcaption class="fig-c">Per-image mean squared reconstruction error of the 32-unit autoencoder: median 0.0160, 99th percentile 0.0424, maximum 0.0728. A threshold at the 99th percentile flags roughly 1% of the 10,000 test images, about 100 of them. The markers are positioned to scale.</figcaption>
+  </figure>
+  <div class="prose">
+    <p>In production, this is the idea behind anomaly detection: train an autoencoder on normal data (normal transactions, healthy machine sensor readings), choose a threshold from the errors on held-out normal data, and flag anything above it.</p>
+  </div>
+  <details><summary>Interview angle: a fraud model flags a transaction whose reconstruction error is ten times the typical error. What can you conclude, and what can't you?</summary><div class="dbody">
+    <p>The transaction is unusual relative to the training data, which is not proof of fraud: it could be new but legitimate behavior. The threshold trades false alarms against missed cases, so flagged items go to review, and the data drifts, so the model needs monitoring and retraining.</p>
+  </div></details>
+  <div class="callout gold">
+    <span class="lab">The identity trap matters here too</span>
+    <p>An overcomplete autoencoder that copies its input reconstructs anomalies just as well as normal data, so nothing gets flagged. The bottleneck is what makes this technique work.</p>
+  </div>
+  <details class="code"><summary>Code: rank test images by reconstruction error</summary><div class="dbody">
+<pre><code data-lang="py">ae.eval()
+with torch.no_grad():
+    err = ((ae(x_test) - x_test) ** 2).mean(dim=1)
+
+worst = err.topk(10).indices
+best = err.topk(10, largest=False).indices
+show_rows([x_test[best], x_test[worst]], ["lowest error", "highest error"])
+
+threshold = torch.quantile(err, 0.99)
+print(f"median error: {err.median():.4f}   99th percentile: {threshold:.4f}   max: {err.max():.4f}")</code></pre>
+<div class="outlab">Output</div>
+<pre class="out"><code>median error: 0.0160   99th percentile: 0.0424   max: 0.0728</code></pre>
+  </div></details>
+
+  <h3>Autoencoders in the 2026 landscape</h3>
+  <div class="prose">
+    <p>The movie pipeline you just built is the same shape as a great deal of modern AI. Select a stage to see its role.</p>
+  </div>
+  <figure class="fig">
+    <div class="fig-h"><h4>The same pipeline behind semantic search, recommendations and RAG</h4><span>Interactive</span></div>
+    <div class="fig-b">
+      <div class="pipe" id="pipe" role="group" aria-label="Pipeline stages"></div>
+      <div class="callout" style="margin:14px 0 0" aria-live="polite"><span class="lab" id="pipeLab"></span><p id="pipeTxt" style="margin:0"></p></div>
+    </div>
+    <figcaption class="fig-c">Search, recommendations and retrieval-augmented generation all run on this pattern: encode items into vectors, store the vectors in an index, and retrieve nearest neighbors. Production encoders for text and images are usually transformers trained with contrastive or masked objectives rather than pure reconstruction. Autoencoders still appear directly for tabular data, sensor data and recommendations.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="card" style="border-top:5px solid var(--royal-600)"><h4>Variational autoencoder</h4><p style="margin:0">Adds one requirement: the code must follow a known distribution, so you can sample a new code and decode it into a new image. That step turns a compressor into a generator.</p></div>
+    <div class="card" style="border-top:5px solid var(--gold-500)"><h4>Latent diffusion</h4><p style="margin:0">Image generators first compress images with an autoencoder, so the expensive diffusion process runs on small latent codes instead of raw pixels. The autoencoder built here is a small cousin of that first stage.</p></div>
+  </div>
+  <div class="callout gold">
+    <span class="lab">Important</span>
+    <p>Autoencoders are rarely the final answer in 2026. They are a building block. The reason to know them well is that their ideas (the bottleneck, the reusable encoder, and the corrupt-and-reconstruct objective) appear inside models much larger than this one.</p>
+  </div>
+</section>
+
+<!-- ============ RECAP ============ -->
+<section class="sec" id="recap" aria-labelledby="h-recap">
+  <header class="sec-h"><span class="num">11</span><div><h2 id="h-recap">Key takeaways</h2><p>What to carry forward.</p></div></header>
+  <ol class="take">
+    <li>An autoencoder is an encoder, a bottleneck and a decoder, trained to reconstruct its own input, with no labels anywhere.</li>
+    <li>The bottleneck is the constraint. Without it, an autoencoder learns to copy, and the loss looks excellent while nothing is learned. A denoising objective removes the shortcut even when the code is wide.</li>
+    <li>The code is reusable: a feature set for small labeled datasets, a coordinate system for visualization, and an embedding for similarity search. Freeze the encoder when labels are scarce and fine-tune when they are plentiful.</li>
+    <li>Low reconstruction error is not the same as a good representation, so always test the code on the task it will serve. Match the objective to the data, as in masking the loss for missing ratings.</li>
+    <li>Use AI to generate hypotheses, then verify them with experiments you can run.</li>
+  </ol>
+
+  <h3>The variants side by side</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">Variant</th><th scope="col">Setup</th><th scope="col">What it showed</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Same width</th><td>Every layer the same size</td><td>Can copy exactly with an identity map; learns nothing.</td></tr>
+        <tr><th scope="row">Undercomplete</th><td>Code narrower than the input</td><td>The bottleneck forces compression; the code is reusable (features, plots, embeddings).</td></tr>
+        <tr><th scope="row">Overcomplete</th><td>Code wider than the input (1,024 vs 784)</td><td>Near-perfect loss (0.00272) by copying, including noise: the identity trap.</td></tr>
+        <tr><th scope="row">Denoising</th><td>Corrupted input, clean target</td><td>Copying now costs loss, so the network learns signal vs noise.</td></tr>
+        <tr><th scope="row">Masked-loss recommender</th><td>Sparse ratings, loss on rated cells only</td><td>Missing is not zero; embeddings support similarity search.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout gold" style="margin-top:28px">
+    <span class="lab">Habits that apply to every model</span>
+    <p>Predict before you run, question your metric, break something on purpose to see how it fails, and verify what any tool tells you.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <strong>Neural Network 7 post read</strong>
+    <span>Autoencoders &middot; <a href="#top">Back to top</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var NS='http://www.w3.org/2000/svg';
+/* ---------- utilities ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function randn(r){var u=0;while(u===0)u=r();var v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function watch(el,fn){
+  var last=-1,t;
+  function run(){var w=Math.round(el.clientWidth);if(w!==last){last=w;fn()}}
+  fn();last=Math.round(el.clientWidth);
+  if(window.ResizeObserver){new ResizeObserver(function(){clearTimeout(t);t=setTimeout(run,80)}).observe(el)}
+  else window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(run,80)});
+}
+function niceTicks(min,max,n){
+  var span=(max-min)||1,raw=span/n,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;
+  var s=(f<=1?1:f<=2?2:f<=5?5:10)*p,t=[];
+  for(var v=Math.ceil(min/s-1e-9)*s;v<=max+s*1e-6;v+=s)t.push(+v.toFixed(10));
+  return t;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function marker(shape,x,y,r,fill,stroke,title){
+  var t=title?'<title>'+esc(title)+'</title>':'';
+  var st='fill:'+fill+';stroke:'+stroke+';stroke-width:1.5';
+  if(shape==='square')return '<rect x="'+(x-r)+'" y="'+(y-r)+'" width="'+(2*r)+'" height="'+(2*r)+'" style="'+st+'">'+t+'</rect>';
+  if(shape==='triangle')return '<path d="M'+x+','+(y-r*1.25)+'L'+(x+r*1.15)+','+(y+r*.9)+'L'+(x-r*1.15)+','+(y+r*.9)+'Z" style="'+st+'">'+t+'</path>';
+  if(shape==='diamond')return '<path d="M'+x+','+(y-r*1.3)+'L'+(x+r*1.3)+','+y+'L'+x+','+(y+r*1.3)+'L'+(x-r*1.3)+','+y+'Z" style="'+st+'">'+t+'</path>';
+  return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" style="'+st+'">'+t+'</circle>';
+}
+function legendHTML(series){
+  return '<ul class="legend">'+series.map(function(s){
+    var sh=s.shape||'circle';
+    var line='<line x1="0" y1="7" x2="30" y2="7" style="stroke:'+s.stroke+';stroke-width:'+(s.width||2.5)+';'+(s.dash?'stroke-dasharray:'+s.dash:'')+'"/>';
+    var mk=s.noMarker?'':marker(sh,15,7,4,s.fill||s.stroke,s.mstroke||s.stroke);
+    return '<li><svg width="30" height="14" viewBox="0 0 30 14" aria-hidden="true">'+line+mk+'</svg>'+esc(s.name)+'</li>';
+  }).join('')+'</ul>';
+}
+
+/* generic line chart. cfg: series[{name,pts,stroke,dash,width,shape,fill,mstroke,noMarker,noLine,markEvery}], xmin,xmax,ymin,ymax,log,xticks,xlab,ylab,h,legend */
+function lineChart(el,cfg,noLegend){
+  var W=Math.max(300,Math.floor(el.clientWidth||600)),H=cfg.h||300;
+  var m={l:cfg.log?58:52,r:18,t:14,b:cfg.xlab?52:34};
+  var iw=W-m.l-m.r,ih=H-m.t-m.b;
+  var sy=cfg.log?Math.log10:function(v){return v};
+  var y0=sy(cfg.ymin),y1=sy(cfg.ymax);
+  function X(v){return m.l+(v-cfg.xmin)/(cfg.xmax-cfg.xmin)*iw}
+  function Y(v){var c=cfg.log?Math.max(v,cfg.ymin):v;return m.t+(1-(sy(c)-y0)/(y1-y0))*ih}
+  var g='',yt=[],k;
+  if(cfg.log){for(k=Math.ceil(y0-1e-9);k<=Math.floor(y1+1e-9);k+=(cfg.logStep||1))yt.push(Math.pow(10,k))}
+  else yt=niceTicks(cfg.ymin,cfg.ymax,5);
+  yt.forEach(function(v){
+    var y=Y(v),lab=cfg.log?(Math.log10(v)>=0&&Math.log10(v)<=3?String(Math.round(v)):'1e'+Math.round(Math.log10(v))):(cfg.fmtY?cfg.fmtY(v):String(v));
+    g+='<line class="grid" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(m.l-8)+'" y="'+(y+4)+'" text-anchor="end">'+lab+'</text>';
+  });
+  var xt=cfg.xticks||niceTicks(cfg.xmin,cfg.xmax,8);
+  xt.forEach(function(v){var x=X(v);g+='<line class="grid" x1="'+x+'" x2="'+x+'" y1="'+m.t+'" y2="'+(H-m.b)+'" style="opacity:.5"/><text x="'+x+'" y="'+(H-m.b+18)+'" text-anchor="middle">'+(cfg.fmtXT?cfg.fmtXT(v):v)+'</text>'});
+  g+='<line class="axis" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+(H-m.b)+'" y2="'+(H-m.b)+'"/><line class="axis" x1="'+m.l+'" x2="'+m.l+'" y1="'+m.t+'" y2="'+(H-m.b)+'"/>';
+  if(cfg.xlab)g+='<text x="'+(m.l+iw/2)+'" y="'+(H-8)+'" text-anchor="middle" style="font-weight:700">'+esc(cfg.xlab)+'</text>';
+  if(cfg.ylab)g+='<text transform="translate(14,'+(m.t+ih/2)+') rotate(-90)" text-anchor="middle" style="font-weight:700">'+esc(cfg.ylab)+'</text>';
+  cfg.series.forEach(function(s){
+    if(!s.pts.length)return;
+    if(!s.noLine){
+      var d=s.pts.map(function(p,i){return(i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)}).join('');
+      g+='<path d="'+d+'" style="fill:none;stroke:'+s.stroke+';stroke-width:'+(s.width||2.5)+';stroke-linejoin:round;stroke-linecap:round;'+(s.dash?'stroke-dasharray:'+s.dash:'')+'"/>';
+    }
+    var every=s.markEvery||(s.pts.length>16?Math.ceil(s.pts.length/10):1);
+    if(!s.noMarker)s.pts.forEach(function(p,i){
+      if(i%every===0||i===s.pts.length-1)g+=marker(s.shape||'circle',X(p[0]),Y(p[1]),4,s.fill||s.stroke,s.mstroke||s.stroke,s.name+': '+(cfg.fmtX?cfg.fmtX(p[0]):p[0])+', '+(cfg.fmtT?cfg.fmtT(p[1]):(+p[1].toPrecision(4))));
+    });
+  });
+  (cfg.notes||[]).forEach(function(n){g+=n(X,Y,m,W,H)});
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(cfg.label||'Line chart')+'">'+g+'</svg>'+(noLegend||cfg.noLegend?'':legendHTML(cfg.series));
+}
+
+/* bar chart. cfg: groups[{label,bars[{v,fill,stroke,name}]}], series[{name,fill,stroke}], fmt, ymax */
+function barChart(el,cfg){
+  var W=Math.max(300,Math.floor(el.clientWidth||600)),H=cfg.h||280;
+  var m={l:48,r:12,t:26,b:42},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  var ymax=cfg.ymax,ticks=niceTicks(0,ymax,4),g='';
+  function Y(v){return m.t+(1-v/ymax)*ih}
+  ticks.forEach(function(v){g+='<line class="grid" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text x="'+(m.l-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+v+'</text>'});
+  g+='<line class="axis" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+Y(0)+'" y2="'+Y(0)+'"/>';
+  var gw=iw/cfg.groups.length;
+  cfg.groups.forEach(function(gr,gi){
+    var n=gr.bars.length,bw=Math.min(70,gw*0.72/n),gap=6,tot=n*bw+(n-1)*gap,x0=m.l+gi*gw+(gw-tot)/2;
+    gr.bars.forEach(function(b,bi){
+      var x=x0+bi*(bw+gap),y=Y(b.v);
+      g+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+Math.max(0,Y(0)-y)+'" rx="4" style="fill:'+b.fill+';stroke:'+(b.stroke||'var(--navy-900)')+';stroke-width:1.5"><title>'+esc(gr.label+(b.name?' ('+b.name+')':'')+': '+cfg.fmt(b.v))+'</title></rect>';
+      g+='<text class="vl" x="'+(x+bw/2)+'" y="'+(y-6)+'" text-anchor="middle">'+cfg.fmt(b.v)+'</text>';
+    });
+    g+='<text x="'+(m.l+gi*gw+gw/2)+'" y="'+(H-m.b+22)+'" text-anchor="middle" style="font-weight:700;font-size:13px">'+esc(gr.label)+'</text>';
+  });
+  var leg='';
+  if(cfg.series)leg='<ul class="legend">'+cfg.series.map(function(s){return '<li><svg width="18" height="12" aria-hidden="true"><rect x="1" y="1" width="16" height="10" rx="2" style="fill:'+s.fill+';stroke:var(--navy-900);stroke-width:1.5"/></svg>'+esc(s.name)+'</li>'}).join('')+'</ul>';
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(cfg.label||'Bar chart')+'">'+g+'</svg>'+leg;
+}
+
+/* aria-pressed toggle helper */
+function toggleGroup(btns,onPick){
+  btns.forEach(function(b,i){b.addEventListener('click',function(){btns.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});onPick(i)})});
+}
+
+/* ---------- top bar: progress + scrollspy ---------- */
+var prog=$('#progress');
+function onScroll(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;prog.style.width=(max>0?h.scrollTop/max*100:0)+'%'}
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+var links=$$('.nav a'),secs=links.map(function(a){return $(a.getAttribute('href'))});
+function spy(){
+  var y=window.scrollY+120,cur=0;
+  secs.forEach(function(s,i){if(s&&s.offsetTop<=y)cur=i});
+  links.forEach(function(a,i){if(i===cur){a.classList.add('on');a.setAttribute('aria-current','true');var n=a.parentNode;if(n.scrollWidth>n.clientWidth){n.scrollLeft=a.offsetLeft-n.clientWidth/2+a.clientWidth/2}}else{a.classList.remove('on');a.removeAttribute('aria-current')}});
+}
+window.addEventListener('scroll',spy,{passive:true});spy();
+
+/* ---------- code highlight ---------- */
+$$('pre code[data-lang="py"]').forEach(function(c){
+  var src=esc(c.textContent);
+  var re=/(#[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|\b(def|return|for|in|if|elif|else|import|from|as|lambda|with|True|False|None|is|not)\b|\b(\d+\.?\d*)\b/g;
+  c.innerHTML=src.replace(re,function(m,cm,st,kw,nu){
+    if(cm)return '<span class="c">'+cm+'</span>';
+    if(st)return '<span class="s">'+st+'</span>';
+    if(kw)return '<span class="k">'+kw+'</span>';
+    return '<span class="n">'+nu+'</span>';
+  });
+});
+
+
+/* ---------- shared palette ---------- */
+var C1='var(--royal-600)',C2='var(--gold-500)',C3='var(--navy-900)';
+function fmtN(n){return n.toLocaleString('en-US')}
+function stat(b,t,gold){return '<div class="stat'+(gold?' gold':'')+'"><b>'+b+'</b><span>'+t+'</span></div>'}
+function stepper(olSel,prevSel,nextSel,textSel,steps){
+  var cur=0,ol=$(olSel);
+  function draw(){
+    ol.innerHTML=steps.map(function(s,i){return '<li><button type="button" data-i="'+i+'"'+(i===cur?' aria-current="step"':'')+'><b>Step '+(i+1)+'</b><span>'+s[0]+'</span></button></li>'}).join('');
+    $(textSel).textContent=steps[cur][1];
+    $$('button',ol).forEach(function(b){b.addEventListener('click',function(){cur=+b.getAttribute('data-i');draw();$('button[aria-current]',ol).focus()})});
+  }
+  $(nextSel).addEventListener('click',function(){cur=(cur+1)%steps.length;draw()});
+  $(prevSel).addEventListener('click',function(){cur=(cur+steps.length-1)%steps.length;draw()});
+  draw();
+}
+function segButtons(box,labels,start,onPick){
+  var btns=labels.map(function(l,i){var b=document.createElement('button');b.type='button';b.className='btn';b.textContent=l;b.setAttribute('aria-pressed',i===start?'true':'false');box.appendChild(b);return b});
+  toggleGroup(btns,onPick);
+}
+
+/* ---------- network layout widget ---------- */
+(function(){
+  var P=[
+    {n:'Same width (6-6-6-6)',s:[6,6,6,6],mid:-1},
+    {n:'Bottleneck (6-4-2-4-6)',s:[6,4,2,4,6],mid:2},
+    {n:'Wider middle (6-8-10-8-6)',s:[6,8,10,8,6],mid:2}
+  ],cur=1,el=$('#netChart');
+  function draw(){
+    var p=P[cur],s=p.s,k=s.length,W=Math.max(300,Math.floor(el.clientWidth||600)),H=290,g='';
+    var xs=s.map(function(_,i){return 46+(W-92)*i/(k-1)}),step=22,cy=156;
+    var ys=s.map(function(n){var a=[];for(var j=0;j<n;j++)a.push(cy+(j-(n-1)/2)*step);return a});
+    for(var i=0;i<k-1;i++)ys[i].forEach(function(y1){ys[i+1].forEach(function(y2){g+='<line x1="'+xs[i]+'" y1="'+y1+'" x2="'+xs[i+1]+'" y2="'+y2+'" style="stroke:var(--royal-300);stroke-width:1;opacity:.45"/>'})});
+    s.forEach(function(n,i){
+      ys[i].forEach(function(y){g+='<circle cx="'+xs[i]+'" cy="'+y+'" r="8.5" style="fill:'+(i===p.mid?'var(--gold-500)':'var(--royal-600)')+';stroke:var(--navy-900);stroke-width:1.5"/>'});
+      g+='<text x="'+xs[i]+'" y="'+(H-8)+'" text-anchor="middle">'+n+' units</text>';
+    });
+    if(p.mid>=0){
+      var ex=(xs[0]+xs[p.mid-1])/2,dx=(xs[p.mid+1]+xs[k-1])/2;
+      g+='<text class="vl" x="'+ex+'" y="18" text-anchor="middle">Encoder</text><text class="vl" x="'+xs[p.mid]+'" y="18" text-anchor="middle" style="fill:var(--gold-700)">Bottleneck (code)</text><text class="vl" x="'+dx+'" y="18" text-anchor="middle">Decoder</text>';
+    }
+    el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Fully connected network with layer sizes '+s.join(', ')+'">'+g+'</svg>';
+    var w=p.mid>=0?s[p.mid]:s[1];
+    $('#netW').textContent=w+' vs '+s[0];
+    var v,t;
+    if(p.mid<0){v='Copy possible';t='Identity weights reproduce the input exactly, so nothing is learned.'}
+    else if(w<s[0]){v='Compression forced';t='The code is narrower than the input, so it must keep whatever helps rebuild the input.'}
+    else{v='No pressure to compress';t='A code wider than the input leaves room to pass everything straight through.'}
+    $('#netV').textContent=v;$('#netT').textContent=t;
+  }
+  segButtons($('#netBtns'),P.map(function(x){return x.n}),cur,function(i){cur=i;draw()});
+  watch(el,draw);
+})();
+
+/* ---------- architecture explorer ---------- */
+(function(){
+  var A=[
+    {n:'32-unit code',d:[784,128,64,32]},
+    {n:'2-unit code',d:[784,512,128,2]},
+    {n:'1,024-unit (overcomplete)',d:[784,1024]},
+    {n:'Recommender (668 ratings in)',d:[668,512,256,128]}
+  ],cur=0,el=$('#archChart');
+  function params(d){var t=0,i;for(i=0;i<d.length-1;i++)t+=d[i]*d[i+1]+d[i+1];for(i=d.length-1;i>0;i--)t+=d[i]*d[i-1]+d[i-1];return t}
+  function draw(){
+    var a=A[cur],d=a.d,cols=d.concat(d.slice(0,-1).reverse()),k=cols.length,ci=d.length-1;
+    var W=Math.max(300,Math.floor(el.clientWidth||600)),H=250,g='',cw=Math.min(46,(W-60)/k*0.6);
+    var xs=cols.map(function(_,i){return 30+cw/2+(W-60-cw)*i/(k-1)}),cy=116;
+    function h(n){return 14+150*Math.sqrt(n/1024)}
+    for(var i=0;i<k-1;i++)g+='<line x1="'+(xs[i]+cw/2)+'" y1="'+cy+'" x2="'+(xs[i+1]-cw/2)+'" y2="'+cy+'" style="stroke:var(--ax);stroke-width:1.5"/>';
+    cols.forEach(function(n,i){
+      var hh=h(n),isC=i===ci;
+      g+='<rect x="'+(xs[i]-cw/2)+'" y="'+(cy-hh/2)+'" width="'+cw+'" height="'+hh+'" rx="6" style="fill:'+(isC?'var(--gold-500)':'var(--royal-600)')+';stroke:var(--navy-900);stroke-width:1.5"><title>'+n+' units</title></rect>';
+      g+='<text class="vl" x="'+xs[i]+'" y="'+(cy+h(1024)/2+22)+'" text-anchor="middle">'+n+'</text>';
+    });
+    if(ci>0)g+='<text class="vl" x="'+((xs[0]+xs[ci-1])/2)+'" y="18" text-anchor="middle">Encoder</text>';
+    g+='<text class="vl" x="'+xs[ci]+'" y="'+(ci>0?18:18)+'" text-anchor="middle" style="fill:var(--gold-700)">Code</text>';
+    if(ci<k-1)g+='<text class="vl" x="'+((xs[ci+1]+xs[k-1])/2)+'" y="18" text-anchor="middle">Decoder</text>';
+    el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Layer widths: '+cols.join(', ')+'">'+g+'</svg>';
+    var code=d[ci],inp=d[0],comp=code<inp?'×'+(inp/code).toFixed(1):'×'+(code/inp).toFixed(2)+' wider';
+    $('#archRead').innerHTML=stat(fmtN(params(d)),'parameters (weights + biases, encoder + decoder)')+stat(code,'units in the code, for '+inp+' inputs',true)+stat(comp,code<inp?'compression of the input':'the code is wider than the input: overcomplete');
+  }
+  segButtons($('#archBtns'),A.map(function(x){return x.n}),0,function(i){cur=i;draw()});
+  watch(el,draw);
+})();
+
+/* ---------- 32-unit training history ---------- */
+(function(){
+  var tr=[0.07536,0.04218,0.03117,0.02707,0.02440,0.02240,0.02074,0.01956,0.01848,0.01761],va=[0.05526,0.03400,0.02851,0.02518,0.02304,0.02119,0.01983,0.01865,0.01773,0.01696];
+  var el=$('#hist32');
+  function draw(){
+    var P=function(a){return a.map(function(v,i){return [i+1,v]})};
+    lineChart(el,{xmin:1,xmax:10,xticks:[1,2,3,4,5,6,7,8,9,10],ymin:0,ymax:0.08,h:300,xlab:'Epoch',ylab:'MSE loss',fmtY:function(v){return v.toFixed(2)},fmtT:function(v){return v.toFixed(5)},
+      label:'Training and validation loss over 10 epochs, both falling together from about 0.07 and 0.055 to about 0.017',
+      series:[{name:'Train',pts:P(tr),stroke:'var(--royal-600)',fill:'var(--royal-600)',shape:'circle',width:3},{name:'Validation',pts:P(va),stroke:'var(--gold-600)',fill:'var(--gold-500)',mstroke:'var(--navy-900)',shape:'square',dash:'7 5',width:3}]});
+  }
+  watch(el,draw);
+})();
+
+/* ---------- code size chart ---------- */
+(function(){
+  var K=[2,8,32,128],M=[0.04754,0.02233,0.01017,0.00772],sel=2,el=$('#sizeChart');
+  function draw(){
+    lineChart(el,{xmin:0.5,xmax:7.5,xticks:[1,3,5,7],fmtXT:function(v){return ({1:2,3:8,5:32,7:128})[v]},fmtX:function(v){return Math.pow(2,v)},ymin:0,ymax:0.06,h:300,xlab:'Code size (log scale)',ylab:'Validation MSE',fmtY:function(v){return v.toFixed(2)},fmtT:function(v){return v.toFixed(5)},
+      label:'Validation MSE falls from 0.04754 at code size 2 to 0.00772 at code size 128 with diminishing returns',
+      series:[{name:'Validation MSE',pts:K.map(function(k,i){return [Math.log2(k),M[i]]}),stroke:'var(--royal-600)',fill:'var(--royal-600)',shape:'circle',width:3,markEvery:1}],
+      notes:[function(X,Y){var i=sel;return '<circle cx="'+X(Math.log2(K[i]))+'" cy="'+Y(M[i])+'" r="10" style="fill:none;stroke:var(--gold-500);stroke-width:4"/><text class="vl" x="'+X(Math.log2(K[i]))+'" y="'+(Y(M[i])-16)+'" text-anchor="middle">'+M[i].toFixed(5)+'</text>'}]});
+    var i=sel,drop=i>0?((1-M[i]/M[i-1])*100).toFixed(0)+'% lower error than the previous size':'the smallest code, and the lossiest';
+    $('#sizeRead').innerHTML=stat(K[i]+' units','code size')+stat(M[i].toFixed(5),'validation MSE',true)+stat('×'+(784/K[i]).toFixed(1),'compression of the 784-pixel input')+stat(i>0?drop.split(' ')[0]:'-',i>0?'lower error than the previous size':drop);
+  }
+  segButtons($('#sizeBtns'),K.map(function(k){return String(k)}),sel,function(i){sel=i;draw()});
+  watch(el,draw);
+})();
+
+/* ---------- why similar pixels -> nearby points ---------- */
+stepper('#whyLoop','#whyPrev','#whyNext','#whyText',[
+  ['Similar images','Two images of the same digit have similar pixels.'],
+  ['Smooth decoder','The decoder is a smooth function, so codes that sit close together must decode to similar images.'],
+  ['Encoder pushed','To rebuild similar images well, the encoder is pushed to give similar images similar codes.'],
+  ['Nearby points','Similar pixels become nearby points in the two-number code, so same-digit images group together, with some overlap where digits look alike.']
+]);
+
+/* ---------- PCA vs AE vs t-SNE ---------- */
+(function(){
+  var M=[
+    ['PCA (2 components)','Linear projection onto the top two principal components.','Cheap, closed-form and interpretable: the right baseline to try first.','Limited to straight-line projections, and two straight directions cannot unfold how handwritten digits vary.'],
+    ['Autoencoder (2-unit code)','The two-number code from a trained encoder (784 → 512 → 128 → 2).','Nonlinear, so it can bend the space; and a reusable function that maps any new image to a code.','Groups are imperfect: fours and nines overlap, and so do threes and fives, because they look alike in pixel space.'],
+    ['t-SNE','A visualization method run on the same 1,000 test images.','Looks cleanest on the page.','It has no encoder, so a brand-new image means rerunning it; it also distorts distances, so it is used only for visualization.']
+  ],box=$('#methRead');
+  function show(i){
+    var m=M[i];
+    box.innerHTML=[['What it is',m[1]],['Strength',m[2]],['Limit',m[3]]].map(function(x,j){return '<div class="card" style="border-top:5px solid '+(j===0?'var(--royal-600)':j===1?'var(--gold-500)':'var(--navy-900)')+'"><h4>'+x[0]+'</h4><p style="margin:0">'+esc(x[1])+'</p></div>'}).join('');
+  }
+  segButtons($('#methBtns'),M.map(function(m){return m[0]}),1,show);show(1);
+})();
+
+/* ---------- freeze vs fine-tune ---------- */
+(function(){
+  function show(fine){
+    $('#frz').innerHTML='<div class="blk '+(fine?'tr':'fz')+'">Pretrained encoder (784 → 128 → 64 → 32)<small>'+(fine?'Trainable: continues training with a small learning rate':'Frozen: requires_grad = False, the optimizer leaves it alone')+'</small></div><div class="blk tr">New head (32 → 10)<small>Trainable</small></div>';
+    $('#frzRead').innerHTML=fine
+      ? stat('111,146 of 111,146','parameters trained',true)+stat('Larger labeled sets','or data that differs from the pretraining data')
+      : stat('330 of 111,146','parameters trained (about 0.3%)',true)+stat('Small labeled sets','where fewer trainable weights means less overfitting');
+  }
+  toggleGroup([$('#frzFeat'),$('#frzFine')],function(i){show(i===1)});show(false);
+})();
+
+/* ---------- accuracy and trap bar charts ---------- */
+watch($('#featChart'),function(){
+  barChart($('#featChart'),{ymax:1,fmt:function(v){return v.toFixed(3)},h:270,
+    label:'Test accuracy: raw pixels 0.859, autoencoder embeddings 0.854, frozen encoder plus linear head 0.853',
+    groups:[{label:'Raw pixels (784)',bars:[{v:0.859,fill:C1}]},{label:'AE embeddings (32)',bars:[{v:0.854,fill:C2}]},{label:'Frozen + head',bars:[{v:0.853,fill:C2}]}]});
+});
+watch($('#trapChart'),function(){
+  barChart($('#trapChart'),{ymax:0.02,fmt:function(v){return v.toFixed(5)},h:270,
+    label:'Validation MSE: 32-unit 0.01696, 1024-unit 0.00272, denoising 1024-unit 0.01270 on noisy inputs',
+    groups:[{label:'32-unit',bars:[{v:0.01696,fill:C1}]},{label:'1,024-unit',bars:[{v:0.00272,fill:C2}]},{label:'Denoising*',bars:[{v:0.01270,fill:'var(--royal-200)'}]}]});
+  $('#trapChart').insertAdjacentHTML('beforeend','<p style="margin:8px 0 0;font-size:.88rem;color:var(--muted)">* Denoising: 1,024-unit model, measured on noisy inputs against clean targets.</p>');
+});
+
+/* ---------- plain vs denoising ---------- */
+(function(){
+  function show(den){
+    $('#dnPair').innerHTML='<div class="pb"><b>Input fed in</b><span>'+(den?'x + noise (std 0.5), fresh each batch':'x, the clean image')+'</span></div><span class="ar" aria-hidden="true">→</span><div class="pb"><b>Network</b><span>Same 784 → 1,024 → 784 autoencoder</span></div><span class="ar" aria-hidden="true">→</span><div class="pb g"><b>Loss compares against</b><span>x, the clean image</span></div><div class="pb g" style="flex-basis:100%"><b>What copying the input costs</b><span>'+(den?'Copying the input copies the noise, which increases the loss. The only way down is to learn what digits look like.':'Nothing: output = input gives zero error. With a wide code the network can take this shortcut.')+'</span></div>';
+  }
+  toggleGroup([$('#dnPlain'),$('#dnDen')],function(i){show(i===1)});show(false);
+})();
+
+/* ---------- scale mismatch ---------- */
+(function(){
+  function draw(){
+    var v=+$('#scVal').value;$('#scOut').textContent=v;
+    var f=Math.max(0,(v-1)*(v-1));
+    $('#scRead').innerHTML=stat(fmtN(f),'smallest possible squared error on this pixel with a sigmoid output (0–1), raw 0–255 data',true)+stat('0','smallest possible error after scaling to [0, 1] (the pixel becomes '+(v/255).toFixed(2)+')');
+  }
+  $('#scVal').addEventListener('input',draw);draw();
+})();
+
+/* ---------- masked loss grid ---------- */
+(function(){
+  var R=10,Cn=14,cells=[],n=0,seed=3;
+  while(n<8||n>14){
+    var rng=mulberry32(seed++);cells=[];n=0;
+    for(var i=0;i<R*Cn;i++){var r=rng()<0.085?1+Math.floor(rng()*5):0;cells.push(r);if(r)n++}
+  }
+  var sumSq=cells.reduce(function(a,r){return a+(r/5)*(r/5)},0),total=R*Cn,masked=false;
+  function draw(){
+    $('#mgrid').innerHTML=cells.map(function(r){return r?'<div class="r">'+r+'</div>':'<div class="'+(masked?'ig':'e')+'"></div>'}).join('');
+    var plain=sumSq/total,mk=sumSq/n;
+    $('#mkRead').innerHTML=stat(masked?n+' of '+total:total+' of '+total,'cells counted by the loss ('+(masked?(n/total*100).toFixed(0):'100')+'%)')+stat((masked?mk:plain).toFixed(3),'loss of a model that predicts 0 everywhere',true)+stat((masked?plain:mk).toFixed(3),'the same model under '+(masked?'plain':'masked')+' MSE');
+  }
+  toggleGroup([$('#mkPlain'),$('#mkMask')],function(i){masked=i===1;draw()});draw();
+})();
+
+/* ---------- recommender training chart ---------- */
+(function(){
+  var E=[5,10,15,20,25,30],tr=[0.06107,0.03022,0.02808,0.02741,0.02702,0.02669],va=[0.03747,0.03130,0.03005,0.02976,0.02971,0.02965],el=$('#recHist');
+  function draw(){
+    var P=function(a){return a.map(function(v,i){return [E[i],v]})};
+    lineChart(el,{xmin:5,xmax:30,xticks:E,ymin:0,ymax:0.07,h:300,xlab:'Epoch',ylab:'Masked MSE loss',fmtY:function(v){return v.toFixed(2)},fmtT:function(v){return v.toFixed(5)},
+      label:'Masked MSE: training falls from 0.06107 to 0.02669 while validation flattens near 0.0297',
+      series:[{name:'Train',pts:P(tr),stroke:'var(--royal-600)',fill:'var(--royal-600)',shape:'circle',width:3,markEvery:1},{name:'Validation',pts:P(va),stroke:'var(--gold-600)',fill:'var(--gold-500)',mstroke:'var(--navy-900)',shape:'square',dash:'7 5',width:3,markEvery:1}]});
+  }
+  watch(el,draw);
+})();
+
+/* ---------- Liar Liar neighbors ---------- */
+(function(){
+  var RAW=[["Pleasantville (1998)","Comedy|Drama|Fantasy",0.995],["Devil's Advocate, The (1997)","Drama|Mystery|Thriller",0.995],["Batman Returns (1992)","Action|Crime",0.995],["Matrix Revolutions, The (2003)","Action|Adventure|Sci-Fi|Thriller|IMAX",0.995],["Austin Powers: International Man of Mystery (1997)","Action|Adventure|Comedy",0.994],["Eyes Wide Shut (1999)","Drama|Mystery|Thriller",0.994],["Scream (1996)","Comedy|Horror|Mystery|Thriller",0.994],["Meet the Parents (2000)","Comedy",0.994],["Con Air (1997)","Action|Adventure|Thriller",0.994],["Austin Powers: The Spy Who Shagged Me (1999)","Action|Adventure|Comedy",0.994]];
+  var CEN=[["Batman Returns (1992)","Action|Crime",0.875],["Mars Attacks! (1996)","Action|Comedy|Sci-Fi",0.872],["Grease (1978)","Comedy|Musical|Romance",0.871],["Austin Powers: The Spy Who Shagged Me (1999)","Action|Adventure|Comedy",0.868],["Matrix Revolutions, The (2003)","Action|Adventure|Sci-Fi|Thriller|IMAX",0.867],["Mummy, The (1999)","Action|Adventure|Comedy|Fantasy|Horror|Thriller",0.857],["Devil's Advocate, The (1997)","Drama|Mystery|Thriller",0.855],["Eyes Wide Shut (1999)","Drama|Mystery|Thriller",0.852],["Dumb & Dumber (Dumb and Dumber) (1994)","Adventure|Comedy",0.849],["Matrix Reloaded, The (2003)","Action|Adventure|Sci-Fi|Thriller|IMAX",0.847]];
+  var cen=false;
+  function draw(){
+    var d=cen?CEN:RAW,zoom=$('#nbZoom').checked;
+    var sc=d.map(function(x){return x[2]}),mn=Math.min.apply(null,sc),mx=Math.max.apply(null,sc),lo=zoom?mn-0.5*(mx-mn):0;
+    $('#nbList').innerHTML=d.map(function(x){var w=zoom?(x[2]-lo)/(mx-lo)*100:x[2]*100;return '<div class="it"><div class="t">'+esc(x[0])+'<small>'+esc(x[1].replace(/\|/g,' · '))+'</small></div><div class="bar" aria-hidden="true"><i style="width:'+w.toFixed(1)+'%"></i></div><div class="sc">'+x[2].toFixed(3)+'</div></div>'}).join('');
+    $('#nbRead').innerHTML=stat(mn.toFixed(3)+' – '+mx.toFixed(3),'range of the ten scores',true)+stat((mx-mn).toFixed(3),'spread between best and tenth neighbor')+stat(cen?'Centered':'Raw','embeddings used');
+  }
+  toggleGroup([$('#nbRaw'),$('#nbCen')],function(i){cen=i===1;draw()});
+  $('#nbZoom').addEventListener('change',draw);draw();
+})();
+
+/* ---------- anomaly number line ---------- */
+(function(){
+  var MAX=0.08,pos=function(v){return (v/MAX*100)+'%'};
+  var h='<div class="track"></div>';
+  [['Median','0.0160',0.0160],['99th percentile','0.0424',0.0424],['Maximum','0.0728',0.0728]].forEach(function(m){h+='<div class="mk" style="left:'+pos(m[2])+'">'+m[0]+'<br>'+m[1]+'</div>'});
+  [0,0.02,0.04,0.06,0.08].forEach(function(v){h+='<div class="tick" style="left:'+pos(v)+'"></div><div class="ax" style="left:'+pos(v)+'">'+v.toFixed(2)+'</div>'});
+  $('#anomLine').innerHTML=h;
+  $('#anomRead').innerHTML=stat('0.0160','median error: a typical test image')+stat('0.0424','99th percentile: a threshold here flags about 1% (roughly 100 of 10,000 images)',true)+stat('×2.7','the 99th percentile is about 2.7× the median (0.0424 ÷ 0.0160)');
+})();
+
+/* ---------- pipeline ---------- */
+(function(){
+  var S=[
+    ['Items','What is being indexed','Movies, images, text: anything that can be turned into a vector. In the movie example each item was a movie\'s row of ratings.'],
+    ['Encoder','Turns an item into a vector','Maps each item to a dense code. Production encoders for text and images are usually transformers trained with contrastive or masked objectives; autoencoders still appear for tabular data, sensor data and recommendations.'],
+    ['Embeddings','The dense vectors','One compact vector per item: 128 numbers per movie in the recommender built here.'],
+    ['Vector index','Stores the vectors','The embeddings are stored in an index so that nearest-neighbor lookups are fast.'],
+    ['Top matches','Retrieve nearest neighbors','A query is encoded and the closest vectors are returned. In the lecture this was cosine similarity over movie embeddings; semantic search, recommendations and retrieval-augmented generation follow the same pattern.']
+  ],box=$('#pipe'),btns=[];
+  S.forEach(function(s,i){
+    var b=document.createElement('button');b.type='button';b.textContent=s[0];b.setAttribute('aria-pressed',i===1?'true':'false');box.appendChild(b);btns.push(b);
+    if(i<S.length-1){var a=document.createElement('span');a.className='ar';a.setAttribute('aria-hidden','true');a.textContent='→';box.appendChild(a)}
+  });
+  function show(i){$('#pipeLab').textContent=S[i][0]+': '+S[i][1];$('#pipeTxt').textContent=S[i][2]}
+  toggleGroup(btns,show);show(1);
+})();
+
+/* ---------- quizzes ---------- */
+var QUIZ={
+ q1:{n:1,q:'What forces an autoencoder to learn a useful representation instead of simply copying its input?',
+  o:['The loss compares each reconstruction with the class label of the input','The decoder uses a different activation function from the encoder','The middle layer has fewer units than the input, forcing compression','The output layer uses a sigmoid so values stay between 0 and 1'],a:2,
+  w:'The bottleneck is the constraint. With fewer units in the middle than in the input, the network cannot pass everything through, so it has to keep whatever helps rebuild the input. Without that constraint, the equal-width network showed that copying is enough and nothing is learned. Labels never enter the loss, and the activation functions in the other options do not create pressure to compress.'},
+ q2:{n:2,q:'You train autoencoders with 2, 8, 32, and 128 code units. Validation reconstruction error falls steadily as the code grows. Which conclusion is best supported?',
+  o:['Bigger codes keep more detail but compress less, so size is a design choice','The 128-unit code is best because the lowest error always means the best model','The 2-unit code is broken, because any useful code needs at least 32 units','Lower reconstruction error proves the codes will also classify digits better'],a:0,
+  w:'A wider bottleneck applies less pressure to compress, so more detail survives and the error falls. That is why there is no universal best size: it depends on how much compression the task can tolerate. The options claiming the lowest error is best, or that it proves better classification, treat reconstruction error as a measure of usefulness, which has not been tested. The 2-unit code is not broken; it is just very lossy, and it is about to be used on purpose.'},
+ q3:{n:3,q:'You have 2 million unlabeled product images and only 800 labeled ones. Which plan uses an autoencoder most sensibly?',
+  o:['Train it on the 800 labeled images only, since unlabeled images cannot help','Train it on everything, then classify using the decoder\'s reconstructed images','Train it on everything, then retrain the whole encoder from scratch on the 800 labels','Train it on everything, then fit a small classifier on the encoder\'s codes'],a:3,
+  w:'The encoder learns structure from all 2 million images without needing a single label. A small classifier on its codes needs few trainable weights, which limits overfitting on 800 labels. Retraining the encoder from scratch is the tempting option because it sounds like fine-tuning, but it throws away the pretraining; and the decoder only exists to train the encoder, so it is not where the features come from.'},
+ q4:{n:4,q:'A team widens an autoencoder\'s code from 32 to 1,024 units on 784-pixel images. Training and validation reconstruction error both drop close to zero. What is the most likely explanation?',
+  o:['The wider code extracts richer features, so the representation is better','The network can copy pixels straight through, so low error says little','Validation images leaked into training, which lowers both errors artificially','The sigmoid output squeezes all predictions, so the error looks small'],a:1,
+  w:'With a code wider than the input, the network can pass every pixel through and reach near-zero error without learning any structure. Both training and validation error come from clean images of the same kind, so both look excellent. The check that exposes it is feeding corrupted input, where the model copies the noise. The denoising objective removes the shortcut by making a plain copy costly. The tempting option equates capacity with better features.'},
+ q5:{n:5,q:'In a ratings matrix, 95% of the entries are 0 because they were never rated. A teammate trains the autoencoder with ordinary MSE over every entry. What is the most likely outcome?',
+  o:['Zeros add nothing to squared error, so they are ignored automatically','The model overfits the rated entries because there are so few of them','The model lowers its loss by predicting near zero almost everywhere','Training fails, because sparse inputs produce undefined gradients'],a:2,
+  w:'Most of the targets are zero, so predicting near zero almost everywhere already gives a small loss. The zeros are not ratings, they are missing entries, and masking the loss to the observed entries makes the model learn only from real information. Zeros do not cost nothing: the squared error on a zero target is the square of the prediction. And the gradients are perfectly well defined.'}
+};
+
+$$('.quiz').forEach(function(box){
+  var d=QUIZ[box.getAttribute('data-quiz')],L='ABCD';
+  function render(chosen){
+    var h='<span class="qh">Knowledge check '+d.n+'</span><p class="qt" id="qt'+d.n+'">'+esc(d.q)+'</p><ul role="group" aria-labelledby="qt'+d.n+'">';
+    d.o.forEach(function(t,i){
+      var cls='',mark='';
+      if(chosen!==null){if(i===d.a){cls='ok';mark=' <strong>(correct)</strong>'}else if(i===chosen){cls='bad';mark=' <strong>(your choice, not correct)</strong>'}}
+      h+='<li><button type="button" data-i="'+i+'" class="'+cls+'"'+(chosen!==null?' disabled':'')+'><span class="ml">'+L[i]+'</span><span>'+esc(t)+mark+'</span></button></li>';
+    });
+    h+='</ul><div aria-live="polite">';
+    if(chosen!==null){
+      h+='<div class="fb '+(chosen===d.a?'good':'')+'"><p><strong>'+(chosen===d.a?'That\'s right.':'Not quite.')+'</strong> The correct answer is '+L[d.a]+'.</p><p>'+esc(d.w)+'</p><button type="button" class="btn ghost sm" data-reset>Try again</button></div>';
+    }
+    h+='</div>';
+    box.innerHTML=h;
+    $$('button[data-i]',box).forEach(function(b){b.addEventListener('click',function(){render(+b.getAttribute('data-i'));var f=$('.fb',box);if(f&&f.scrollIntoView)f.scrollIntoView({block:'nearest'})})});
+    var rs=$('[data-reset]',box);if(rs)rs.addEventListener('click',function(){render(null);$('button[data-i]',box).focus()});
+  }
+  render(null);
+});
+
+
+})();
+</script>
+</body>
+</html>
